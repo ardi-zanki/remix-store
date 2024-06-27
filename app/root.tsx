@@ -59,7 +59,11 @@ export function links() {
   return [
     ...preconnects.map((preconnect) => ({rel: 'preconnect', ...preconnect})),
     ...styleSheets.map((href) => ({rel: 'stylesheet', href})),
-    {rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg'},
+    {rel: 'icon', href: '/favicon-32.png', sizes: '32x32'},
+    {rel: 'icon', href: '/favicon-128.png', sizes: '128x128'},
+    {rel: 'icon', href: '/favicon-180.png', sizes: '180x180'},
+    {rel: 'icon', href: '/favicon-192.png', sizes: '192x192'},
+    {rel: 'apple-touch-icon', href: '/favicon-180.png', sizes: '180x180'},
     {
       rel: 'preload',
       as: 'image',
