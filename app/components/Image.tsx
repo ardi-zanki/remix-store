@@ -23,8 +23,8 @@ export type ImageProps = HydrogenImageProps & {
  * Image component with multiple gradient backgrounds options
  */
 export function Image(props: ImageProps) {
-  const {gradient = null, gradientFade = false} = props;
-  if (!gradient) return <HydrogenImage {...props} />;
+  const {gradient = null, gradientFade = false, ...rest} = props;
+  if (!gradient) return <HydrogenImage {...rest} />;
 
   const gradients = {
     // https://doodad.dev/gradient-generator?share=radial-90-200-158-31-35-6_21-74dfeaff_100-5a67d8ff__linear-161-50-50-50-50-7_1-8bdabcff_26-73dee9ff_71-67a0e6ff_100-4c51bf00
@@ -78,7 +78,7 @@ export function Image(props: ImageProps) {
           }}
         />
       )}
-      <HydrogenImage {...props} />
+      <HydrogenImage {...rest} />
     </div>
   );
 }
