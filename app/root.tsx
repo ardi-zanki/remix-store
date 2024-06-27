@@ -46,7 +46,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 export function links() {
   const preconnects = [
     {href: 'https://fonts.googleapis.com'},
-    {href: 'https://fonts.gstatic.com', crossorigin: true},
+    {href: 'https://fonts.gstatic.com', crossOrigin: 'true'},
     {href: 'https://cdn.shopify.com'},
     {href: 'https://shop.app'},
   ];

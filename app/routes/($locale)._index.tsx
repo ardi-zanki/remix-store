@@ -8,6 +8,8 @@ import type {
   RecommendedProductsQuery,
 } from 'storefrontapi.generated';
 import {parseGradientColors} from '~/lib/metafields';
+import {Button} from '~/components/ui/button';
+import Icon from '~/components/Icon';
 
 export const meta: MetaFunction = () => {
   return [{title: 'Hydrogen | Home'}];
