@@ -66,7 +66,7 @@ export function links() {
     ...preloadedFonts.map((font) => ({
       rel: 'preload',
       as: 'font',
-      href: `/app/assets/font/${font}`,
+      href: `/font/${font}`,
       crossOrigin: 'anonymous',
     })),
     {rel: 'preload', as: 'image', href: spriteUrl, type: 'image/svg+xml'},

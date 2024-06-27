@@ -28,10 +28,8 @@ const config = {
       success: {brand: '#3992FF'},
       error: {brand: '#F44250'},
       warning: {brand: '#FECC1B'},
-
       white: '#FFFFFF',
       black: '#000000',
-
       neutral: {
         50: '#F5F5EF',
         100: '#EAEAE4',
