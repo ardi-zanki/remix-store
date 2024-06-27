@@ -4,3 +4,13 @@
 .dark {
   color-scheme: dark;
 }
+
+a {
+  @apply text-black dark:text-white;
+}
+
+html,
+body {
+  @apply bg-neutral-200 dark:bg-neutral-800;
+  @apply text-black dark:text-white;
+}

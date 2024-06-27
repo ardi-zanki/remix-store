@@ -1,24 +1,32 @@
-import {twMerge} from 'tailwind-merge';
+import {cn} from '~/lib';
 
-type IconName =
+export type IconName =
   | 'bag'
   | 'check'
   | 'chevron-down'
   | 'chevron-up'
+  | 'computer'
   | 'filter'
   | 'globe'
   | 'info'
   | 'minus'
   | 'moon'
   | 'plus'
+  | 'sun'
   | 'tag'
   | 'trash'
   | 'x';
 
-export type IconProps = React.SVGProps<SVGElement> & {name: IconName};
-export default function Icon({name, className}: IconProps) {
+export type IconProps = Omit<React.SVGProps<SVGElement>, 'ref'> & {
+  name: IconName;
+};
+export default function Icon({name, className, ...props}: IconProps) {
   return (
-    <svg className={twMerge('size-6 text-black', className)} aria-hidden>
+    <svg
+      className={cn('size-6 text-black dark:text-white', className)}
+      aria-hidden
+      {...props}
+    >
       <use href={`/sprite.svg#${name}`} />
     </svg>
   );
