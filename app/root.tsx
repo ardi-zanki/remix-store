@@ -11,8 +11,6 @@ import {
   isRouteErrorResponse,
   type ShouldRevalidateFunction,
 } from '@remix-run/react';
-import spriteUrl from 'virtual:@mcansh/vite-svg-sprite-plugin';
-import favicon from '~/assets/favicon.svg';
 import resetStyles from '~/styles/reset.css?url';
 import styles from './tailwind.css?url';
 import appStyles from '~/styles/app.css?url';
@@ -64,12 +62,7 @@ export function links() {
     ...preconnects.map((preconnect) => ({rel: 'preconnect', ...preconnect})),
     ...styleSheets.map((href) => ({rel: 'stylesheet', href})),
     {rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg'},
-    {
-      rel: 'preload',
-      as: 'image',
-      href: `../assets/sprite.svg`,
-      type: 'image/svg+xml',
-    },
+    {rel: 'preload', as: 'image', href: `/sprite.svg`, type: 'image/svg+xml'},
   ];
 }
 

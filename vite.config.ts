@@ -3,7 +3,6 @@ import {hydrogen} from '@shopify/hydrogen/vite';
 import {oxygen} from '@shopify/mini-oxygen/vite';
 import {vitePlugin as remix} from '@remix-run/dev';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import {createSvgSpritePlugin} from '@mcansh/vite-svg-sprite-plugin';
 
 export default defineConfig({
   plugins: [
@@ -18,7 +17,6 @@ export default defineConfig({
       },
     }),
     tsconfigPaths(),
-    createSvgSpritePlugin(),
   ],
   build: {
     // Allow a strict Content-Security-Policy
