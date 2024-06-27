@@ -3,6 +3,8 @@ import {hydrogen} from '@shopify/hydrogen/vite';
 import {oxygen} from '@shopify/mini-oxygen/vite';
 import {vitePlugin as remix} from '@remix-run/dev';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import {createSvgSpritePlugin} from '@mcansh/vite-svg-sprite-plugin';
+import {removeHashFromSprite} from './plugins/vite-sprite-svg-fix';
 
 export default defineConfig({
   plugins: [
@@ -17,6 +19,10 @@ export default defineConfig({
       },
     }),
     tsconfigPaths(),
+    createSvgSpritePlugin(),
+    // Temporarily fix the sprite file name hash issue. We should add a
+    // option to the createSvgSpritePlugin to define an output folder.
+    removeHashFromSprite(),
   ],
   build: {
     // Allow a strict Content-Security-Policy
