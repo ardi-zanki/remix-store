@@ -131,14 +131,10 @@ async function loadCriticalData({context, request}: LoaderFunctionArgs) {
  */
 function loadDeferredData({context}: LoaderFunctionArgs) {
   const {storefront, customerAccount, cart} = context;
-
   // defer the footer query (below the fold)
   const footer = storefront
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
-      variables: {
-        footerMenuHandle: 'footer', // Adjust to your footer menu handle
-      },
     })
     .catch((error) => {
       // Log query errors, but don't throw them so the page can still render
