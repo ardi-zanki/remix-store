@@ -1,15 +1,28 @@
-import {defer, type LoaderFunctionArgs} from '@shopify/remix-oxygen';
+import type {LinksFunction, LoaderFunctionArgs} from '@shopify/remix-oxygen';
+import {defer} from '@shopify/remix-oxygen';
 import {Await, useLoaderData, Link, type MetaFunction} from '@remix-run/react';
 import {Suspense} from 'react';
-import {Image, Money} from '@shopify/hydrogen';
+import {Image} from '@shopify/hydrogen';
 import {CollectionGrid, CollectionItem} from '~/components/CollectionGrid';
 import type {
   FeaturedCollectionFragment,
   RecommendedProductsQuery,
 } from 'storefrontapi.generated';
+import featuredFrame from '~/assets/featured-frame.svg?url';
 
 export const meta: MetaFunction = () => {
   return [{title: 'Hydrogen | Home'}];
+};
+
+export const links: LinksFunction = () => {
+  return [
+    {
+      rel: 'preload',
+      href: featuredFrame,
+      as: 'image',
+      type: 'image/svg+xml',
+    },
+  ];
 };
 
 export async function loader(args: LoaderFunctionArgs) {
@@ -78,7 +91,17 @@ function FeaturedCollection({
       className="block mb-8 relative px-16"
       to={`/collections/${collection.handle}`}
     >
-      {image && <Image data={image} sizes="100vw" />}
+      <div className="max-w-7xl mx-auto relative">
+        <img className="aspect-[1290/426]" src={featuredFrame} alt="" />
+        {image && (
+          <Image
+            className="absolute top-1/2 -translate-y-1/2"
+            data={image}
+            sizes="100vw"
+            alt=""
+          />
+        )}
+      </div>
     </Link>
   );
 }
