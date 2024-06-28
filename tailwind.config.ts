@@ -5,12 +5,11 @@ import plugin from 'tailwindcss/plugin';
 const config = {
   darkMode: ['class'],
   content: ['./app/**/*.{js,jsx,ts,tsx}'],
-  // mode: 'jit',
   prefix: '',
   theme: {
     fontFamily: {
-      sans: ['"Inter"', ...defaultTheme.fontFamily.sans],
-      serif: ['"Inter"', ...defaultTheme.fontFamily.serif],
+      body: ['"Inter"', ...defaultTheme.fontFamily.sans],
+      heading: ['Founders Grotesk', ...defaultTheme.fontFamily.sans],
     },
     screens: {
       sm: '640px',
@@ -20,6 +19,9 @@ const config = {
       '2xl': '1980px',
     },
     colors: {
+      gray: '#343436',
+      lightGray: '#E3E2DD',
+      black: '#242426',
       cyan: {brand: '#3DEFE9'},
       blue: {brand: '#3992FF'},
       green: {brand: '#6BD968'},
@@ -30,8 +32,7 @@ const config = {
       success: {brand: '#3992FF'},
       error: {brand: '#F44250'},
       warning: {brand: '#FECC1B'},
-      white: '#FFFFFF',
-      black: '#000000',
+      white: '#DADADA',
       neutral: {
         50: '#F5F5EF',
         100: '#EAEAE4',
@@ -51,7 +52,13 @@ const config = {
         '2xl': '1400px',
       },
     },
+    letterSpacing: {
+      tightest: ' -1.92px',
+    },
     extend: {
+      borderRadius: {
+        input: '14px',
+      },
       keyframes: {
         'accordion-down': {
           from: {height: '0'},

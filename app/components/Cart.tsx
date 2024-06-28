@@ -10,6 +10,7 @@ import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {useVariantUrl} from '~/lib/variants';
 import {Image} from '~/components/Image';
 import {parseGradientColors} from '~/lib/metafields';
+import clsx from 'clsx';
 
 type CartLine = OptimisticCart<CartApiQueryFragment>['lines']['nodes'][0];
 
@@ -25,10 +26,12 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
   const withDiscount =
     cart &&
     Boolean(cart?.discountCodes?.filter((code) => code.applicable)?.length);
+
+  // TODO: cart main vs sidecart in tailwind
   const className = `cart-main ${withDiscount ? 'with-discount' : ''}`;
 
   return (
-    <div className={className}>
+    <div className={clsx(className)}>
       <CartEmpty hidden={linesCount} layout={layout} />
       <CartDetails cart={cart} layout={layout} />
     </div>
@@ -43,12 +46,17 @@ function CartDetails({
   layout: 'page' | 'aside';
 }) {
   const cartHasItems = !!cart && cart.totalQuantity > 0;
+  if (!cartHasItems) return null;
 
   return (
     <div className="cart-details">
+      <p>
+        There are <strong>{cart.totalQuantity}</strong> items in this cart
+      </p>
       <CartLines lines={cart?.lines?.nodes} layout={layout} />
       {cartHasItems && (
-        <CartSummary cost={cart.cost} layout={layout}>
+        <CartSummary layout={layout}>
+          <CartSubTotal subtotalAmount={cart.cost.subtotalAmount} />
           <CartDiscounts discountCodes={cart.discountCodes} />
           <CartCheckoutActions checkoutUrl={cart.checkoutUrl} />
         </CartSummary>
@@ -67,7 +75,7 @@ function CartLines({
   if (!lines) return null;
 
   return (
-    <div aria-labelledby="cart-lines">
+    <div aria-labelledby="cart-lines" className={clsx('')}>
       <ul>
         {lines.map((line) => (
           <CartLineItem key={line.id} line={line} layout={layout} />
@@ -90,21 +98,26 @@ function CartLineItem({
   const gradients = parseGradientColors(product.gradientColors);
 
   return (
-    <li key={id} className="cart-line">
+    <li
+      key={id}
+      className={clsx('cart-line', 'flex first:pt-8 py-4 last:pb-8')}
+    >
       {image && (
-        <Image
-          alt={title}
-          aspectRatio="1/1"
-          data={image}
-          height={100}
-          loading="lazy"
-          width={100}
-          gradient={gradients[0]}
-          gradientFade
-        />
+        <div className="w-[148px] h-[148px]">
+          <Image
+            alt={title}
+            aspectRatio="1/1"
+            data={image}
+            height={100}
+            loading="lazy"
+            width={100}
+            gradient={gradients[0]}
+            gradientFade
+          />
+        </div>
       )}
 
-      <div>
+      <div className={clsx('ml-6 flex flex-col')}>
         <Link
           prefetch="intent"
           to={lineItemUrl}
@@ -121,13 +134,17 @@ function CartLineItem({
         </Link>
         <CartLinePrice line={line} as="span" />
         <ul>
-          {selectedOptions.map((option) => (
-            <li key={option.name}>
-              <small>
-                {option.name}: {option.value}
-              </small>
-            </li>
-          ))}
+          {selectedOptions.map((option) => {
+            const isDefaultVariant = option.value === 'Default Title';
+            if (isDefaultVariant) return null;
+            return (
+              <li key={option.name}>
+                <small>
+                  {option.name}: {option.value}
+                </small>
+              </li>
+            );
+          })}
         </ul>
         <CartLineQuantity line={line} />
       </div>
@@ -139,40 +156,55 @@ function CartCheckoutActions({checkoutUrl}: {checkoutUrl: string}) {
   if (!checkoutUrl) return null;
 
   return (
-    <div>
-      <a href={checkoutUrl} target="_self">
-        <p>Continue to Checkout &rarr;</p>
+    <div className="pt-8 flex">
+      <a className="m-0 p-0 block" href={checkoutUrl} target="_self">
+        <p>Continue to checkout</p>
       </a>
       <br />
     </div>
   );
 }
 
+function CartSubTotal({
+  subtotalAmount,
+}: {
+  subtotalAmount: CartApiQueryFragment['cost']['subtotalAmount'];
+}) {
+  return (
+    <dl className={clsx('flex justify-between w-full')}>
+      <dt className="text-xl">Subtotal</dt>
+      <dd>
+        {subtotalAmount?.amount ? (
+          <p className="inline-flex">
+            <span className="mr-3">{subtotalAmount.currencyCode}</span>
+            <Money as="strong" data={subtotalAmount} />
+          </p>
+        ) : (
+          '-'
+        )}
+      </dd>
+    </dl>
+  );
+}
+
 export function CartSummary({
-  cost,
   layout,
   children = null,
 }: {
   children?: React.ReactNode;
-  cost: CartApiQueryFragment['cost'];
   layout: CartMainProps['layout'];
 }) {
   const className =
     layout === 'page' ? 'cart-summary-page' : 'cart-summary-aside';
 
   return (
-    <div aria-labelledby="cart-summary" className={className}>
-      <h4>Totals</h4>
-      <dl className="cart-subtotal">
-        <dt>Subtotal</dt>
-        <dd>
-          {cost?.subtotalAmount?.amount ? (
-            <Money data={cost?.subtotalAmount} />
-          ) : (
-            '-'
-          )}
-        </dd>
-      </dl>
+    <div
+      aria-labelledby="cart-summary"
+      className={clsx(
+        className,
+        'absolute left-0 bottom-0 bg-lightGray dark:bg-gray p-8 w-[586px]',
+      )}
+    >
       {children}
     </div>
   );
@@ -269,23 +301,21 @@ export function CartEmpty({
   hidden: boolean;
   layout?: CartMainProps['layout'];
 }) {
+  const ctaUrl = '/collections/all';
   return (
     <div hidden={hidden}>
       <br />
-      <p>
-        Looks like you haven&rsquo;t added anything yet, let&rsquo;s get you
-        started!
-      </p>
+      <p>There are no items in this cart.</p>
       <br />
       <Link
-        to="/collections"
+        to={ctaUrl}
         onClick={() => {
           if (layout === 'aside') {
-            window.location.href = '/collections';
+            window.location.href = ctaUrl;
           }
         }}
       >
-        Continue shopping →
+        What&apos;s new? →
       </Link>
     </div>
   );
@@ -302,7 +332,7 @@ function CartDiscounts({
       ?.map(({code}) => code) || [];
 
   return (
-    <div>
+    <div className={clsx('pt-8')}>
       {/* Have existing discount, display it with a remove option */}
       <dl hidden={!codes.length}>
         <div>
@@ -318,13 +348,25 @@ function CartDiscounts({
       </dl>
 
       {/* Show an input to apply a discount */}
-      <UpdateDiscountForm discountCodes={codes}>
-        <div>
-          <input type="text" name="discountCode" placeholder="Discount code" />
-          &nbsp;
-          <button type="submit">Apply</button>
-        </div>
-      </UpdateDiscountForm>
+      {!codes && (
+        <UpdateDiscountForm discountCodes={codes}>
+          <div className={clsx('w-100 flex justify-between')}>
+            <input
+              type="text"
+              name="discountCode"
+              placeholder="Enter promo code"
+              className={clsx(
+                'bg-lightGray dark:bg-black p-4 w-full rounded-l-input',
+              )}
+            />
+            <div className="bg-lightGray dark:bg-black rounded-r-input">
+              <button type="submit" className="mr-4 w-[108px] h-[56px]">
+                APPLY CODE
+              </button>
+            </div>
+          </div>
+        </UpdateDiscountForm>
+      )}
     </div>
   );
 }
