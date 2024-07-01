@@ -21,7 +21,7 @@ const config = {
     colors: {
       gray: '#343436',
       lightGray: '#E3E2DD',
-      black: '#242426',
+      black: '#000000',
       cyan: {brand: '#3DEFE9'},
       blue: {brand: '#3992FF'},
       green: {brand: '#6BD968'},
@@ -32,7 +32,7 @@ const config = {
       success: {brand: '#3992FF'},
       error: {brand: '#F44250'},
       warning: {brand: '#FECC1B'},
-      white: '#DADADA',
+      white: '#FFFFFF',
       neutral: {
         50: '#F5F5EF',
         100: '#EAEAE4',
