@@ -26,12 +26,6 @@ export function CartMain({layout, cart: originalCart}: CartMainProps) {
   const cart = useOptimisticCart(originalCart);
 
   const linesCount = Boolean(cart?.lines?.nodes?.length || 0);
-  const withDiscount =
-    cart &&
-    Boolean(cart?.discountCodes?.filter((code) => code.applicable)?.length);
-
-  // TODO: cart main vs sidecart in tailwind
-  const className = `cart-main ${withDiscount ? 'with-discount' : ''}`;
 
   return (
     <div className={clsx('w-full h-full')}>
@@ -76,11 +70,11 @@ function CartDetails({
   layout,
   cart,
 }: {
-  cart: OptimisticCart<CartApiQueryFragment>;
+  cart: OptimisticCart<CartApiQueryFragment | null>;
   layout: 'page' | 'aside';
   hidden: boolean;
 }) {
-  const cartHasItems = !!cart && cart.totalQuantity > 0;
+  const cartHasItems = !!cart?.totalQuantity;
   if (!cartHasItems) return null;
 
   return (
@@ -91,7 +85,7 @@ function CartDetails({
       <CartLines lines={cart?.lines?.nodes} layout={layout} />
       {cartHasItems && (
         <CartSummary layout={layout}>
-          <CartSubTotal subtotalAmount={cart.cost.subtotalAmount} />
+          <CartSubTotal subtotalAmount={cart.cost?.subtotalAmount} />
           <CartDiscounts discountCodes={cart.discountCodes} />
           <CheckoutButton checkoutUrl={cart.checkoutUrl} />
         </CartSummary>
@@ -202,7 +196,7 @@ function CartLineItem({
 function CartSubTotal({
   subtotalAmount,
 }: {
-  subtotalAmount: CartApiQueryFragment['cost']['subtotalAmount'];
+  subtotalAmount?: Partial<CartApiQueryFragment['cost']['subtotalAmount']>;
 }) {
   return (
     <dl className={clsx('flex justify-between w-full')}>
@@ -347,7 +341,7 @@ function CartLinePrice({
 function CartDiscounts({
   discountCodes,
 }: {
-  discountCodes: CartApiQueryFragment['discountCodes'];
+  discountCodes?: CartApiQueryFragment['discountCodes'];
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const codeEntered = Boolean(inputRef.current?.value);
@@ -453,7 +447,7 @@ function CartLineUpdateButton({
   );
 }
 
-function CheckoutButton({checkoutUrl}: {checkoutUrl: string}) {
+function CheckoutButton({checkoutUrl}: {checkoutUrl?: string}) {
   if (!checkoutUrl) return null;
 
   return (

@@ -14,12 +14,12 @@ import type {
 } from 'storefrontapi.generated';
 import {Image, type ImageGradientColors} from '~/components/Image';
 import {
+  type OptimisticCartLineInput,
   Money,
   VariantSelector,
   type VariantOption,
   getSelectedProductOptions,
   CartForm,
-  type OptimisticCartLine,
   Analytics,
   type CartViewPayload,
   useAnalytics,
@@ -317,7 +317,7 @@ function ProductForm({
     <div className="product-form">
       <VariantSelector
         handle={product.handle}
-        options={product.options}
+        options={product.options.filter((option) => option.values.length > 1)}
         variants={variants}
       >
         {({option}) => <ProductOptions key={option.name} option={option} />}
@@ -391,7 +391,7 @@ function AddToCartButton({
   analytics?: unknown;
   children: React.ReactNode;
   disabled?: boolean;
-  lines: Array<OptimisticCartLine>;
+  lines: Array<OptimisticCartLineInput>;
   onClick?: () => void;
 }) {
   return (
