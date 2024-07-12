@@ -3,13 +3,20 @@ import {hydrogen} from '@shopify/hydrogen/vite';
 import {oxygen} from '@shopify/mini-oxygen/vite';
 import {vitePlugin as remix} from '@remix-run/dev';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import {createSvgSpritePlugin} from '@mcansh/vite-svg-sprite-plugin';
-import {removeHashFromSprite} from './plugins/vite-sprite-svg-fix';
+import {iconsSpritesheet} from 'vite-plugin-icons-spritesheet';
 
 export default defineConfig({
   plugins: [
     hydrogen(),
     oxygen(),
+    iconsSpritesheet({
+      inputDir: 'app/assets/icons',
+      outputDir: 'public',
+      typesOutputFile: 'app/components/Icon/types.ts',
+      withTypes: true,
+      iconNameTransformer: (name) =>
+        name.charAt(0).toLowerCase() + name.slice(1),
+    }),
     remix({
       presets: [hydrogen.preset()],
       future: {
@@ -19,10 +26,6 @@ export default defineConfig({
       },
     }),
     tsconfigPaths(),
-    createSvgSpritePlugin(),
-    // Temporarily fix the sprite file name hash issue. We should add a
-    // option to the createSvgSpritePlugin to define an output folder.
-    removeHashFromSprite(),
   ],
   build: {
     // Allow a strict Content-Security-Policy

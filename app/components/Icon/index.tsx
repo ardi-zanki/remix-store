@@ -1,21 +1,5 @@
 import {cn} from '~/lib';
-
-export type IconName =
-  | 'bag'
-  | 'check'
-  | 'chevron-down'
-  | 'chevron-up'
-  | 'computer'
-  | 'filter'
-  | 'globe'
-  | 'info'
-  | 'minus'
-  | 'moon'
-  | 'plus'
-  | 'sun'
-  | 'tag'
-  | 'trash'
-  | 'x';
+import type {IconName} from './types';
 
 export type IconProps = Omit<React.SVGProps<SVGElement>, 'ref'> & {
   name: IconName;
