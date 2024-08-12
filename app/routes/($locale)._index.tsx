@@ -1,33 +1,14 @@
-import type { LinksFunction, LoaderFunctionArgs } from "@shopify/remix-oxygen";
+import type { LoaderFunctionArgs } from "@shopify/remix-oxygen";
 import { defer } from "@shopify/remix-oxygen";
-import {
-  Await,
-  useLoaderData,
-  Link,
-  type MetaFunction,
-} from "@remix-run/react";
+import { Await, useLoaderData, type MetaFunction } from "@remix-run/react";
 import { Suspense } from "react";
-import { Image } from "@shopify/hydrogen";
 import { CollectionGrid } from "~/components/CollectionGrid";
-import type {
-  FeaturedCollectionFragment,
-  RecommendedProductsQuery,
-} from "storefrontapi.generated";
-import featuredFrame from "~/assets/featured-frame.svg?url";
+import type { RecommendedProductsQuery } from "storefrontapi.generated";
+
+import { Hero } from "~/components/hero";
 
 export const meta: MetaFunction = () => {
   return [{ title: "The Remix Store | Home" }];
-};
-
-export const links: LinksFunction = () => {
-  return [
-    {
-      rel: "preload",
-      href: featuredFrame,
-      as: "image",
-      type: "image/svg+xml",
-    },
-  ];
 };
 
 export async function loader(args: LoaderFunctionArgs) {
@@ -75,39 +56,23 @@ function loadDeferredData({ context }: LoaderFunctionArgs) {
 }
 
 export default function Homepage() {
-  const data = useLoaderData<typeof loader>();
+  const { featuredCollection, recommendedProducts } =
+    useLoaderData<typeof loader>();
+
   return (
     <>
-      <FeaturedCollection collection={data.featuredCollection} />
-      <RecommendedProducts products={data.recommendedProducts} />
-    </>
-  );
-}
-
-function FeaturedCollection({
-  collection,
-}: {
-  collection: FeaturedCollectionFragment | undefined | null;
-}) {
-  if (!collection) return null;
-  const image = collection?.image;
-  return (
-    <Link
-      className="relative block bg-neutral-200 px-16 pb-8 dark:bg-neutral-800"
-      to={`/collections/${collection.handle}`}
-    >
-      <div className="relative mx-auto max-w-7xl">
-        <img className="aspect-[1290/426]" src={featuredFrame} alt="" />
-        {image && (
-          <Image
-            className="absolute top-1/2 -translate-y-1/2"
-            data={image}
-            sizes="100vw"
-            alt=""
+      {featuredCollection ? (
+        <div className="px-9">
+          <Hero
+            image={featuredCollection.image}
+            title="remix mini skateboard"
+            subtitle="build your very own"
+            to={`/products/${featuredCollection.products.nodes[0].handle}`}
           />
-        )}
-      </div>
-    </Link>
+        </div>
+      ) : null}
+      <RecommendedProducts products={recommendedProducts} />
+    </>
   );
 }
 
@@ -128,9 +93,9 @@ function RecommendedProducts({
 }
 
 const FEATURED_COLLECTION_QUERY = `#graphql
-  fragment FeaturedCollection on Collection {
-      id
-      title
+  query FeaturedCollection($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    collectionByHandle(handle: "featured") {
       image {
         id
         url
@@ -138,13 +103,11 @@ const FEATURED_COLLECTION_QUERY = `#graphql
         width
         height
       }
-      handle
-    }
-
-  query FeaturedCollection($country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    collectionByHandle(handle: "featured") {
-      ...FeaturedCollection
+      products(first: 1) {
+        nodes {
+          handle
+        }
+      }
     }
   }
 ` as const;

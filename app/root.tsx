@@ -10,8 +10,8 @@ import {
   ScrollRestoration,
   isRouteErrorResponse,
   type ShouldRevalidateFunction,
+  Link,
 } from "@remix-run/react";
-import appStyles from "~/styles/app.css?url";
 import { PageLayout } from "~/components/PageLayout";
 import { FOOTER_QUERY, HEADER_QUERY } from "~/lib/fragments";
 import { parseColorScheme } from "./lib/color-scheme.server";
@@ -19,7 +19,10 @@ import clsx from "clsx";
 import { ColorSchemeScript, useColorScheme } from "~/lib/color-scheme";
 import { useAside } from "~/components/Aside";
 
+import "~/styles/app.css"; // TODO: remove when finished with tailwind
 import "./tailwind.css";
+import { Hero } from "./components/hero";
+import { Button } from "./components/ui/button";
 
 export type RootLoader = typeof loader;
 
@@ -48,38 +51,27 @@ export function links() {
   const preconnects = [
     { href: "https://fonts.googleapis.com" },
     { href: "https://fonts.gstatic.com", crossOrigin: "true" },
-    { href: "https://cdn.shopify.com" },
+    { href: "https://cdn.shopify.com", crossOrigin: "true" },
     { href: "https://shop.app" },
   ];
 
-  const styleSheets = [
-    appStyles, // TODO: remove when finished with tailwind
+  const fonts = [
+    "https://fonts.googleapis.com/css2?family=Sometype+Mono:ital,wght@0,400..700;1,400..700&display=swap",
     "https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap",
-    "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap",
   ];
 
-  const localFonts = ["FoundersGrotesk-Bold.woff2"];
-
   return [
+    // Preload Jersey 10, earliest, since it's a blocking font
+    { rel: "preload", as: "font", href: "/font/jersey-10/latin-ext.woff2" },
+    { rel: "preload", as: "font", href: "/font/jersey-10/latin.woff2" },
     ...preconnects.map((preconnect) => ({ rel: "preconnect", ...preconnect })),
-    ...styleSheets.map((href) => ({ rel: "stylesheet", href })),
-
-    ...localFonts.map((href) => ({
-      rel: "preload",
-      as: "font",
-      href: `/font/${href}`,
-    })),
+    ...fonts.map((href) => ({ rel: "preload", as: "style", href })),
+    ...fonts.map((href) => ({ rel: "stylesheet", href })),
     { rel: "icon", href: "/favicon-32.png", sizes: "32x32" },
     { rel: "icon", href: "/favicon-128.png", sizes: "128x128" },
     { rel: "icon", href: "/favicon-180.png", sizes: "180x180" },
     { rel: "icon", href: "/favicon-192.png", sizes: "192x192" },
     { rel: "apple-touch-icon", href: "/favicon-180.png", sizes: "180x180" },
-    {
-      rel: "preload",
-      as: "image",
-      href: "/sprite.svg",
-      type: "image/svg+xml",
-    },
   ];
 }
 
@@ -222,14 +214,20 @@ export function ErrorBoundary() {
   }
 
   return (
-    <div className="route-error">
-      <h1>Oops</h1>
-      <h2>{errorStatus}</h2>
-      {errorMessage && (
-        <fieldset>
-          <pre>{errorMessage}</pre>
-        </fieldset>
-      )}
+    <div className="px-9">
+      <Hero subtitle={errorMessage} title={`error ${errorStatus}`} />
+      <div className="my-[100px] flex flex-col items-center gap-6">
+        <p className="text-xl">
+          Please check to see if you have typed the URL correctly.
+        </p>
+        <div className="w-[340px]">
+          <Button size="fw" asChild>
+            <Link className="text-center" to="/">
+              Back to shop
+            </Link>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -8,7 +8,8 @@ const config = {
   theme: {
     fontFamily: {
       body: ['"Inter"', ...defaultTheme.fontFamily.sans],
-      heading: ["Founders Grotesk", ...defaultTheme.fontFamily.sans],
+      heading: ['"Jersey 10"', ...defaultTheme.fontFamily.sans],
+      mono: ['"Sometype Mono"', ...defaultTheme.fontFamily.mono],
     },
     screens: {
       sm: "640px",
@@ -22,7 +23,7 @@ const config = {
       current: "currentColor",
       transparent: "transparent",
       cyan: { brand: "#3DEFE9" },
-      blue: { brand: "#3988F8" },
+      blue: { brand: "#3988F8", led: "#C8DFEA" },
       green: { brand: "#6BD968" },
       yellow: { brand: "#FECC1B" },
       magenta: { brand: "#D83BD2" },

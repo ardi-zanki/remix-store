@@ -90,7 +90,7 @@ async function loadCriticalData({
   ]);
 
   if (!product?.id) {
-    throw new Response(null, { status: 404 });
+    throw new Response("Product not found", { status: 404 });
   }
 
   const firstVariant = product.variants.nodes[0];
@@ -170,7 +170,7 @@ export default function Product() {
   const { selectedVariant } = product;
 
   return (
-    <div className="mx-auto grid max-w-[theme(screens.2xl)] grid-cols-2 gap-3 px-9">
+    <div className="lg mx-auto grid max-w-[theme(screens.2xl)] grid-cols-2 gap-3 px-9">
       <ProductImages
         images={product?.images.nodes || []}
         gradientColors={product.gradientColors}
