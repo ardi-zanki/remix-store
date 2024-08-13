@@ -6,7 +6,7 @@ import {
   SearchForm,
   SearchResults,
   NoSearchResults,
-} from "~/components/Search";
+} from "~/components/search";
 
 export const meta: MetaFunction = () => {
   return [{ title: `The Remix Store | Search` }];
