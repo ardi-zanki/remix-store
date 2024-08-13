@@ -267,7 +267,9 @@ function ProductMain({
       <div className={cardCss}>
         <div className="flex flex-col gap-6">
           {vendor !== DEFAULT_VENDOR ? <p>Cotopaxi</p> : null}
-          <h1>{title}</h1>
+          <h1 className="font-heading text-[2rem] tracking-[-0.32px] sm:text-6xl sm:leading-[0.75]">
+            {title}
+          </h1>
           <ProductPrice selectedVariant={selectedVariant} />
         </div>
 
@@ -417,7 +419,7 @@ function ProductForm({
       {isAvailable ? (
         // ShopPayButton -- if reused pull out into a component
         <Button
-          className="flex justify-center bg-shop-pay-brand py-[22px] [--yamaha-shadow-color:theme(colors.shop-pay.brand)]"
+          className="bg-shop-pay flex justify-center py-[22px] [--yamaha-shadow-color:theme(colors.shop-pay)]"
           intent="primary"
           size="fw"
           // TODO: Add link to immediate checkout
