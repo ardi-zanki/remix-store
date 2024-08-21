@@ -1,15 +1,12 @@
 import { Suspense } from "react";
-import {
-  defer,
-  redirect,
-  type LoaderFunctionArgs,
-} from "@shopify/remix-oxygen";
+import { defer, type LoaderFunctionArgs } from "@shopify/remix-oxygen";
 import {
   Await,
   Link,
   useLoaderData,
   type MetaFunction,
   type FetcherWithComponents,
+  useSearchParams,
 } from "@remix-run/react";
 import type {
   ProductFragment,
@@ -103,12 +100,6 @@ async function loadCriticalData({
 
   if (firstVariantIsDefault) {
     product.selectedVariant = firstVariant;
-  } else {
-    // if no selected variant was returned from the selected options,
-    // we redirect to the first variant's url with it's selected options applied
-    if (!product.selectedVariant) {
-      throw redirectToFirstVariant({ product, request });
-    }
   }
 
   return {
@@ -142,35 +133,12 @@ function loadDeferredData({ context, params }: LoaderFunctionArgs) {
   };
 }
 
-function redirectToFirstVariant({
-  product,
-  request,
-}: {
-  product: ProductFragment;
-  request: Request;
-}) {
-  const url = new URL(request.url);
-  const firstVariant = product.variants.nodes[0];
-
-  return redirect(
-    getVariantUrl({
-      pathname: url.pathname,
-      handle: product.handle,
-      selectedOptions: firstVariant.selectedOptions,
-      searchParams: new URLSearchParams(url.search),
-    }),
-    {
-      status: 302,
-    },
-  );
-}
-
 export default function Product() {
   const { product, variants } = useLoaderData<typeof loader>();
   const { selectedVariant } = product;
 
   return (
-    <div className="lg mx-auto grid max-w-[theme(screens.xl)] grid-cols-2 gap-3">
+    <div className="lg mx-auto grid max-w-[theme(screens.xl)] gap-3 md:grid-cols-2">
       <ProductImages
         images={product?.images.nodes || []}
         gradientColors={product.gradientColors}
@@ -258,19 +226,18 @@ function ProductMain({
   variants: Promise<ProductVariantsQuery | null>;
 }) {
   const { title, vendor, description, specs, fullDescription } = product;
-
   const cardCss =
-    "flex flex-col gap-8 rounded-3xl bg-neutral-100 p-12 dark:bg-neutral-700";
+    "flex flex-col gap-8 rounded-3xl bg-neutral-100 p-6 lg:p-12 dark:bg-neutral-700";
 
   return (
     <div className="flex flex-col gap-3">
       <div className={cardCss}>
         <div className="flex flex-col gap-6">
-          {vendor !== DEFAULT_VENDOR ? <p>Cotopaxi</p> : null}
-          <h1 className="font-heading text-[2rem] tracking-[-0.32px] sm:text-6xl sm:leading-[0.75]">
-            {title}
-          </h1>
-          <ProductPrice selectedVariant={selectedVariant} />
+          <ProductHeader
+            title={title}
+            vendor={vendor}
+            selectedVariant={selectedVariant || product.variants.nodes[0]}
+          />
         </div>
 
         <p>{description}</p>
@@ -301,7 +268,7 @@ function ProductMain({
         </div>
       </div>
       <div className={cardCss}>
-        <Accordion type="multiple" className="-mx-6">
+        <Accordion type="multiple" className="lg:-m-6">
           {fullDescription ? (
             <AccordionItem value="description">
               <AccordionTrigger>Description</AccordionTrigger>
@@ -336,33 +303,55 @@ function ProductMain({
   );
 }
 
-function ProductPrice({
+function ProductHeader({
+  title,
+  vendor,
   selectedVariant,
 }: {
+  title: string;
+  vendor?: string;
   selectedVariant: ProductFragment["selectedVariant"];
 }) {
+  const displayVendor = vendor !== DEFAULT_VENDOR;
+  const price = Number(selectedVariant?.price.amount || 0);
+  const compareAtPrice = Number(selectedVariant?.compareAtPrice?.amount || 0);
+  const isOnSale = price < compareAtPrice;
+  const percentageOff = isOnSale
+    ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
+    : 0;
+
   return (
-    <div>
-      {selectedVariant?.compareAtPrice ? (
-        <>
-          <p>Sale</p>
-          <br />
-          <div>
-            {selectedVariant ? <Money data={selectedVariant.price} /> : null}
-            <s>
-              <Money data={selectedVariant.compareAtPrice} />
-            </s>
-          </div>
-        </>
-      ) : (
-        selectedVariant?.price && (
-          <Money
-            className="text-2xl"
-            data={selectedVariant?.price}
-            withoutTrailingZeros
-          />
-        )
+    <div className="flex flex-col gap-6">
+      {(displayVendor || isOnSale) && (
+        <div className="flex justify-between">
+          {displayVendor && <div>{vendor}</div>}
+          {isOnSale && (
+            <div className="text-right font-semibold text-red-brand">SALE</div>
+          )}
+        </div>
       )}
+      <h1 className="font-heading text-[2rem] tracking-[-0.32px] sm:text-6xl sm:leading-[0.75]">
+        {title}
+      </h1>
+
+      <div className="flex gap-3 text-2xl tracking-[-0.48px]">
+        <Money
+          className="font-bold"
+          data={selectedVariant?.price!}
+          withoutTrailingZeros
+        />
+        {isOnSale && (
+          <>
+            <s className="line-through opacity-50">
+              <Money
+                data={selectedVariant?.compareAtPrice!}
+                withoutTrailingZeros
+              />
+            </s>
+            <span className="text-red-brand">{percentageOff}% Off</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -379,8 +368,23 @@ function ProductForm({
   const { open } = useAside();
   const { publish, shop, cart, prevCart } = useAnalytics();
   const isAvailable = !!selectedVariant?.availableForSale;
+  const [searchParams] = useSearchParams();
+  const { options } = product;
+  let addToCartText = "Add to cart";
+
+  // If the product has options (like size, color, etc), check whether each option has been selected
+  if (options.length > 0 && !selectedVariant) {
+    for (const option of options) {
+      const selectedOption = searchParams.get(option.name);
+      if (!selectedOption) {
+        addToCartText = `Select a ${option.name.toLowerCase()}`;
+        break;
+      }
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-8">
       <VariantSelector
         handle={product.handle}
         options={product.options.filter((option) => option.values.length > 1)}
@@ -388,7 +392,6 @@ function ProductForm({
       >
         {({ option }) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
-      <br />
       <AddToCartButton
         disabled={!selectedVariant || !isAvailable}
         onClick={() => {
@@ -413,7 +416,7 @@ function ProductForm({
             : []
         }
       >
-        {isAvailable ? "Add to cart" : "Sold out"}
+        {product.availableForSale ? addToCartText : "Sold out"}
       </AddToCartButton>
 
       {isAvailable ? <ShopPayButton /> : null}
@@ -437,28 +440,31 @@ export function ShopPayButton() {
 
 function ProductOptions({ option }: { option: VariantOption }) {
   return (
-    <div key={option.name}>
-      <h5>{option.name}</h5>
-      <div>
-        {option.values.map(({ value, isAvailable, isActive, to }) => {
-          return (
-            <Link
-              key={option.name + value}
-              prefetch="intent"
-              preventScrollReset
-              replace
-              to={to}
-              style={{
-                border: isActive ? "1px solid black" : "1px solid transparent",
-                opacity: isAvailable ? 1 : 0.3,
-              }}
-            >
-              {value}
-            </Link>
-          );
-        })}
-      </div>
-      <br />
+    <div
+      key={option.name}
+      className={"grid grid-flow-col justify-stretch gap-1 lg:gap-4"}
+    >
+      {option.values.map(({ value, isAvailable, isActive, to }) => {
+        return (
+          <Button
+            asChild
+            key={option.name + value}
+            size="sm"
+            type="submit"
+            intent={isActive ? "primary" : "secondary"}
+            disabled={!isAvailable}
+            className="px-0 text-center"
+          >
+            {isAvailable ? (
+              <Link prefetch="intent" preventScrollReset replace to={to}>
+                {value}
+              </Link>
+            ) : (
+              <span>{value}</span>
+            )}
+          </Button>
+        );
+      })}
     </div>
   );
 }
