@@ -75,11 +75,12 @@ export function links() {
     })),
     ...googleFonts.map((href) => ({ rel: "preload", as: "style", href })),
     ...googleFonts.map((href) => ({ rel: "stylesheet", href })),
-    { rel: "icon", href: "/favicon-32.png", sizes: "32x32" },
-    { rel: "icon", href: "/favicon-128.png", sizes: "128x128" },
-    { rel: "icon", href: "/favicon-180.png", sizes: "180x180" },
-    { rel: "icon", href: "/favicon-192.png", sizes: "192x192" },
-    { rel: "apple-touch-icon", href: "/favicon-180.png", sizes: "180x180" },
+    ...[16, 32, 96, 128, 196].map((size) => ({
+      rel: "icon",
+      type: "image/png",
+      href: `/favicon-${size}x${size}.png`,
+      sizes: `${size}x${size}`,
+    })),
   ];
 }
 
