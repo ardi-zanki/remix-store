@@ -68,7 +68,9 @@ const button = cva(["block no-underline"], {
 });
 
 const well = cva(
-  ["overflow-hidden relative bg-black bg-opacity-5 dark:bg-opacity-20"],
+  [
+    "overflow-hidden relative select-none bg-black bg-opacity-5 dark:bg-opacity-20",
+  ],
   {
     variants: {
       size: {
@@ -97,13 +99,14 @@ export const Button = forwardRef(
       disabled = false,
       ...props
     }: ButtonProps,
-    ref: React.Ref<HTMLDivElement>,
+    ref: React.Ref<HTMLButtonElement>,
   ) => {
     const Comp = asChild ? Slot : "button";
 
     return (
-      <div ref={ref} className={cn(well({ size }))}>
+      <div className={cn(well({ size }))}>
         <Comp
+          ref={ref}
           {...props}
           className={cn(button({ intent, size, disabled }), props.className)}
           disabled={disabled}
@@ -119,6 +122,8 @@ export const ButtonWithWellText = forwardRef(
   (
     {
       asChild,
+      className,
+      children,
       intent = "secondary",
       size = "sm",
       disabled = false,
@@ -129,28 +134,33 @@ export const ButtonWithWellText = forwardRef(
       wellPrefix?: React.ReactNode;
       wellPostfix?: React.ReactNode;
     },
-    ref: React.Ref<HTMLDivElement>,
+    ref: React.Ref<HTMLButtonElement>,
   ) => {
     const Comp = asChild ? Slot : "button";
 
     return (
       <div
-        ref={ref}
-        className={cn(
-          well({ size }),
-          "flex min-w-fit max-w-full items-center justify-between gap-3",
-        )}
+        className={cn(well({ size }), "flex min-w-fit max-w-full items-center")}
       >
         {wellPrefix ? (
-          <div className="whitespace-nowrap pl-5 font-medium">{wellPrefix}</div>
+          <div className="mr-auto whitespace-nowrap px-5 text-sm font-medium md:text-base">
+            {wellPrefix}
+          </div>
         ) : null}
         <Comp
           {...props}
-          className={cn(button({ intent, size, disabled }), props.className)}
+          ref={ref}
+          className={cn(
+            button({ intent, size, disabled }),
+            "before:absolute before:inset-0 before:size-full",
+            className,
+          )}
           disabled={disabled}
-        />
+        >
+          {children}
+        </Comp>
         {wellPostfix ? (
-          <div className="whitespace-nowrap pr-5 font-medium">
+          <div className="ml-auto whitespace-nowrap px-5 text-sm font-medium md:text-base">
             {wellPostfix}
           </div>
         ) : null}

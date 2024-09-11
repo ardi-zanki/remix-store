@@ -1,9 +1,9 @@
 import { Button, ButtonWithWellText } from "~/components/ui/button";
-import { cn } from "~/lib";
 import { ShopPayButton } from "./($locale).products.$handle";
 import Icon from "~/components/icon";
 import { iconNames } from "~/components/icon/types.generated";
 import { Fragment } from "react/jsx-runtime";
+import { Section } from "./components";
 
 export default function Buttons() {
   return (
@@ -56,36 +56,28 @@ export default function Buttons() {
       </Section>
       <Section
         title="Buttons with extended wells"
-        className="flex w-[500px] flex-col gap-4"
+        className="flex flex-col gap-4"
       >
-        <ButtonWithWellText size="icon" wellPrefix="🇺🇸 USD">
-          <Icon name="globe" />
-        </ButtonWithWellText>
-        <ButtonWithWellText size="icon" wellPrefix="Price: High To Low">
-          <Icon name="chevron-down" />
-        </ButtonWithWellText>
-        <ButtonWithWellText size="icon" wellPostfix="Showing 6 items">
-          <Icon name="filter" />
-        </ButtonWithWellText>
+        <div className="w-[150px]">
+          <ButtonWithWellText
+            size="icon"
+            wellPrefix="🇺🇸 USD"
+            className="max-w-[250px]"
+          >
+            <Icon name="globe" />
+          </ButtonWithWellText>
+        </div>
+        <div className="w-[250px]">
+          <ButtonWithWellText size="icon" wellPostfix="Showing 6 items">
+            <Icon name="filter" />
+          </ButtonWithWellText>
+        </div>
+        <div className="w-fit md:w-[280px]">
+          <ButtonWithWellText size="icon" wellPrefix="Price: High To Low">
+            <Icon name="chevron-down" />
+          </ButtonWithWellText>
+        </div>
       </Section>
     </div>
-  );
-}
-
-// Might want to pull this out 🤷‍♂️
-function Section({
-  title,
-  className,
-  children,
-}: {
-  title: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="mt-8 px-8 py-6">
-      <h2 className="text-4xl">{title}</h2>
-      <div className={cn("mt-6", className)}>{children}</div>
-    </section>
   );
 }
