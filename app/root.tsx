@@ -18,10 +18,11 @@ import { parseColorScheme } from "./lib/color-scheme.server";
 import clsx from "clsx";
 import { ColorSchemeScript, useColorScheme } from "~/lib/color-scheme";
 
-import jersey10Url from "/font/jersey-10/latin.woff2?url";
-import jersey10ExtUrl from "/font/jersey-10/latin-ext.woff2?url";
+import interUrl from "/font/inter-roman-latin-var.woff2?url";
+import interItalicUrl from "/font/inter-italic-latin-var.woff2?url";
+import sourceCodeProUrl from "/font/source-code-pro-roman-var.woff2?url";
+import sourceCodeProItalicUrl from "/font/source-code-pro-italic-var.woff2?url";
 
-import "~/styles/app.css"; // TODO: remove when finished with tailwind
 import "./tailwind.css";
 import { Hero } from "./components/hero";
 import { Button } from "./components/ui/button";
@@ -52,29 +53,25 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 
 export function links() {
   const preconnects = [
-    { href: "https://fonts.googleapis.com" },
-    { href: "https://fonts.gstatic.com", crossOrigin: "true" },
     { href: "https://cdn.shopify.com", crossOrigin: "true" },
     { href: "https://shop.app" },
   ];
 
-  const localFonts = [jersey10Url, jersey10ExtUrl];
-  const googleFonts = [
-    "https://fonts.googleapis.com/css2?family=Sometype+Mono:ital,wght@0,400..700;1,400..700&display=swap",
-    "https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap",
+  const localFonts = [
+    interUrl,
+    interItalicUrl,
+    sourceCodeProUrl,
+    sourceCodeProItalicUrl,
   ];
 
   return [
     ...preconnects.map((preconnect) => ({ rel: "preconnect", ...preconnect })),
-    // Preload Jersey 10, earliest, since it's a blocking font
     ...localFonts.map((href) => ({
       rel: "preload",
       as: "font",
       href,
       crossOrigin: "anonymous",
     })),
-    ...googleFonts.map((href) => ({ rel: "preload", as: "style", href })),
-    ...googleFonts.map((href) => ({ rel: "stylesheet", href })),
     ...[16, 32, 96, 128, 196].map((size) => ({
       rel: "icon",
       type: "image/png",
