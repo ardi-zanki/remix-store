@@ -4,9 +4,14 @@ import { defer } from "@shopify/remix-oxygen";
 import { Await, useLoaderData, type MetaFunction } from "@remix-run/react";
 import { Hero } from "~/components/hero";
 import { FiltersToolbar } from "~/components/filters";
-import { PRODUCT_ITEM_FRAGMENT } from "~/lib/fragments";
+import {
+  COLLECTION_VIDEO_FRAGMENT,
+  PRODUCT_ITEM_FRAGMENT,
+} from "~/lib/fragments";
 import { CollectionGrid } from "~/components/collection-grid";
 import type { RecommendedProductsQuery } from "storefrontapi.generated";
+
+export const FEATURED_COLLECTION_HANDLE = "remix-logo-apparel";
 
 export const meta: MetaFunction = () => {
   return [{ title: "The Remix Store | Home" }];
@@ -27,13 +32,17 @@ export async function loader(args: LoaderFunctionArgs) {
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
 async function loadCriticalData({ context }: LoaderFunctionArgs) {
-  const [collection] = await Promise.all([
-    context.storefront.query(FEATURED_COLLECTION_QUERY),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+  const { featuredCollection } = await context.storefront.query(
+    FEATURED_COLLECTION_QUERY,
+    {
+      variables: {
+        handle: FEATURED_COLLECTION_HANDLE,
+      },
+    },
+  );
 
   return {
-    featuredCollection: collection.collectionByHandle,
+    featuredCollection,
   };
 }
 
@@ -64,10 +73,18 @@ export default function Homepage() {
     <>
       {featuredCollection ? (
         <Hero
+          video={
+            featuredCollection.video?.reference?.__typename === "Video"
+              ? featuredCollection.video?.reference
+              : undefined
+          }
           image={featuredCollection.image}
-          title="remix mini skateboard"
-          subtitle="build your very own"
-          to={`/products/${featuredCollection.products.nodes[0].handle}`}
+          title={featuredCollection.title}
+          subtitle={featuredCollection.featuredDescription?.value}
+          href={{
+            text: "shop collection",
+            to: `/collections/${featuredCollection.handle}`,
+          }}
         />
       ) : null}
       <FiltersToolbar />
@@ -92,21 +109,27 @@ function RecommendedProducts({
   );
 }
 
-const FEATURED_COLLECTION_QUERY = `#graphql
-  query FeaturedCollection($country: CountryCode, $language: LanguageCode)
+export const FEATURED_COLLECTION_QUERY = `#graphql
+  ${COLLECTION_VIDEO_FRAGMENT}
+  query FeaturedCollection($handle: String!, $country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    collectionByHandle(handle: "featured") {
+    featuredCollection: collection(handle: $handle) {
+      title
+      handle
       image {
-        id
-        url
-        altText
-        width
-        height
+        ...ProductImage
       }
-      products(first: 1) {
-        nodes {
-          handle
+      video: metafield(key: "featured_video", namespace: "custom") {
+        id
+        reference {
+          __typename
+          ... on Video {
+            ...CollectionVideo
+          }
         }
+      }
+      featuredDescription: metafield(key: "featured_description", namespace: "custom") {
+        value
       }
     }
   }

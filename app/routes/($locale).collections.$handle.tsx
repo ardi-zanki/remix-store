@@ -33,7 +33,10 @@ export async function loader(args: LoaderFunctionArgs) {
   // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
 
-  return defer({ ...deferredData, ...criticalData });
+  return defer({
+    ...deferredData,
+    ...criticalData,
+  });
 }
 
 /**
@@ -89,7 +92,7 @@ export default function Collection() {
     <div>
       <Hero
         title={collection.title}
-        subtitle="now browsing"
+        subtitle={collection.description}
         image={collection.image}
       />
       <FiltersToolbar />
@@ -135,12 +138,9 @@ const COLLECTION_QUERY = `#graphql
       id
       handle
       title
+      description
       image {
-        id
-        url
-        altText
-        width
-        height
+        ...ProductImage
       }
       seo {
         title
