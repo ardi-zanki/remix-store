@@ -176,7 +176,7 @@ function ProductImages({
 }) {
   const gradients = parseGradientColors(gradientColors);
   return (
-    <div>
+    <div className="flex flex-col gap-3">
       {images.map((image) => {
         if (!image) return null;
         const gradient = gradients.shift() ?? "random";
@@ -199,18 +199,16 @@ function ProductImage({
     return null;
   }
   return (
-    <div className="mb-3">
-      <div className="aspect-ratio relative isolate overflow-hidden rounded-3xl">
-        <Image
-          alt={image.altText || "Product Image"}
-          aspectRatio="1/1"
-          data={image}
-          key={image.id}
-          gradient={gradient}
-          gradientFade={true}
-          sizes="(min-width: 45em) 50vw, 100vw"
-        />
-      </div>
+    <div className="aspect-ratio relative isolate overflow-hidden rounded-3xl">
+      <Image
+        alt={image.altText || "Product Image"}
+        aspectRatio="1/1"
+        data={image}
+        key={image.id}
+        gradient={gradient}
+        gradientFade={true}
+        sizes="(min-width: 45em) 50vw, 100vw"
+      />
     </div>
   );
 }
@@ -229,74 +227,76 @@ function ProductMain({
     "flex flex-col gap-8 rounded-3xl bg-neutral-100 p-6 lg:p-12 dark:bg-neutral-700";
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className={cardCss}>
-        <div className="flex flex-col gap-6">
-          <ProductHeader
-            title={title}
-            vendor={vendor}
-            selectedVariant={selectedVariant || product.variants.nodes[0]}
-          />
-        </div>
+    <div>
+      <div className="sticky top-[var(--header-height)] flex flex-col gap-3">
+        <div className={cardCss}>
+          <div className="flex flex-col gap-6">
+            <ProductHeader
+              title={title}
+              vendor={vendor}
+              selectedVariant={selectedVariant || product.variants.nodes[0]}
+            />
+          </div>
 
-        <p>{description}</p>
+          <p>{description}</p>
 
-        <div className="flex flex-col gap-3">
-          <Suspense
-            fallback={
-              <ProductForm
-                product={product}
-                selectedVariant={selectedVariant}
-                variants={[]}
-              />
-            }
-          >
-            <Await
-              errorElement="There was a problem loading product variants"
-              resolve={variants}
-            >
-              {(data) => (
+          <div className="flex flex-col gap-3">
+            <Suspense
+              fallback={
                 <ProductForm
                   product={product}
                   selectedVariant={selectedVariant}
-                  variants={data?.product?.variants.nodes || []}
+                  variants={[]}
                 />
-              )}
-            </Await>
-          </Suspense>
+              }
+            >
+              <Await
+                errorElement="There was a problem loading product variants"
+                resolve={variants}
+              >
+                {(data) => (
+                  <ProductForm
+                    product={product}
+                    selectedVariant={selectedVariant}
+                    variants={data?.product?.variants.nodes || []}
+                  />
+                )}
+              </Await>
+            </Suspense>
+          </div>
         </div>
-      </div>
-      <div className={cardCss}>
-        <Accordion type="multiple" className="lg:-m-6">
-          {fullDescription ? (
-            <AccordionItem value="description">
-              <AccordionTrigger>Description</AccordionTrigger>
+        <div className={cardCss}>
+          <Accordion type="multiple" className="lg:-m-6">
+            {fullDescription ? (
+              <AccordionItem value="description">
+                <AccordionTrigger>Description</AccordionTrigger>
+                <AccordionContent>
+                  <RichText data={fullDescription.value} />
+                </AccordionContent>
+              </AccordionItem>
+            ) : null}
+            {specs ? (
+              <AccordionItem value="specs">
+                <AccordionTrigger>Specs</AccordionTrigger>
+                <AccordionContent>
+                  <RichText
+                    data={specs.value}
+                    // Should this be set globally?
+                    className="[&_ul]:list-inside [&_ul]:list-disc [&_ul]:pl-2"
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            ) : null}
+            <AccordionItem value="shipping">
+              <AccordionTrigger>Shipping</AccordionTrigger>
               <AccordionContent>
-                <RichText data={fullDescription.value} />
+                {/* Not sure if this should be coming from the data or just be standard for all products */}
+                See a full list of countries we ship to{" "}
+                <Link to="/help">here</Link>.
               </AccordionContent>
             </AccordionItem>
-          ) : null}
-          {specs ? (
-            <AccordionItem value="specs">
-              <AccordionTrigger>Specs</AccordionTrigger>
-              <AccordionContent>
-                <RichText
-                  data={specs.value}
-                  // Should this be set globally?
-                  className="[&_ul]:list-inside [&_ul]:list-disc [&_ul]:pl-2"
-                />
-              </AccordionContent>
-            </AccordionItem>
-          ) : null}
-          <AccordionItem value="shipping">
-            <AccordionTrigger>Shipping</AccordionTrigger>
-            <AccordionContent>
-              {/* Not sure if this should be coming from the data or just be standard for all products */}
-              See a full list of countries we ship to{" "}
-              <Link to="/help">here</Link>.
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+          </Accordion>
+        </div>
       </div>
     </div>
   );
