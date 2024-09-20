@@ -13,7 +13,6 @@ import type {
   ProductVariantsQuery,
   ProductVariantFragment,
 } from "storefrontapi.generated";
-import { Image, type ImageGradientColors } from "~/components/image";
 import {
   type OptimisticCartLineInput,
   Money,
@@ -28,7 +27,6 @@ import {
 } from "@shopify/hydrogen";
 import type { SelectedOption } from "@shopify/hydrogen/storefront-api-types";
 import { useAside } from "~/components/ui/aside";
-import { parseGradientColors } from "~/lib/metafields";
 import {
   PRODUCT_DETAIL_FRAGMENT,
   PRODUCT_VARIANT_FRAGMENT,
@@ -41,6 +39,7 @@ import {
   AccordionTrigger,
 } from "~/components/ui/accordion";
 import Icon from "~/components/icon";
+import ProductImages from "~/components/product-images";
 
 /** The default vendor, which we hide because nobody cares */
 const DEFAULT_VENDOR = "Remix Swag Store";
@@ -75,15 +74,12 @@ async function loadCriticalData({
     throw new Error("Expected product handle to be defined");
   }
 
-  const [{ product }] = await Promise.all([
-    storefront.query(PRODUCT_QUERY, {
-      variables: {
-        handle,
-        selectedOptions: getSelectedProductOptions(request),
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+  const { product } = await storefront.query(PRODUCT_QUERY, {
+    variables: {
+      handle,
+      selectedOptions: getSelectedProductOptions(request),
+    },
+  });
 
   if (!product?.id) {
     throw new Response("Product not found", { status: 404 });
@@ -134,15 +130,19 @@ function loadDeferredData({ context, params }: LoaderFunctionArgs) {
 
 export default function Product() {
   const { product, variants } = useLoaderData<typeof loader>();
-  const { selectedVariant } = product;
+  let { selectedVariant } = product;
+
+  // If a variant isn't selected, use the first variant for price, analytics, etc
+  if (!selectedVariant) {
+    selectedVariant = product.variants.nodes[0];
+  }
 
   return (
-    <div className="lg mx-auto grid max-w-[theme(screens.xl)] gap-3 md:grid-cols-2">
+    <div className="lg mx-auto max-w-[theme(screens.xl)] md:flex md:gap-[18px]">
       <ProductImages
-        images={product?.images.nodes || []}
+        images={product?.images.nodes}
         gradientColors={product.gradientColors}
       />
-      {/* <ProductImage image={selectedVariant?.image} /> */}
       <ProductMain
         selectedVariant={selectedVariant}
         product={product}
@@ -167,52 +167,6 @@ export default function Product() {
   );
 }
 
-function ProductImages({
-  images,
-  gradientColors,
-}: {
-  images: Array<ProductVariantFragment["image"]>;
-  gradientColors: ProductFragment["gradientColors"];
-}) {
-  const gradients = parseGradientColors(gradientColors);
-  return (
-    <div className="flex flex-col gap-3">
-      {images.map((image) => {
-        if (!image) return null;
-        const gradient = gradients.shift() ?? "random";
-        return (
-          <ProductImage key={image.id} image={image} gradient={gradient} />
-        );
-      })}
-    </div>
-  );
-}
-
-function ProductImage({
-  image,
-  gradient,
-}: {
-  image: ProductVariantFragment["image"];
-  gradient?: ImageGradientColors;
-}) {
-  if (!image) {
-    return null;
-  }
-  return (
-    <div className="aspect-ratio relative isolate overflow-hidden rounded-3xl">
-      <Image
-        alt={image.altText || "Product Image"}
-        aspectRatio="1/1"
-        data={image}
-        key={image.id}
-        gradient={gradient}
-        gradientFade={true}
-        sizes="(min-width: 45em) 50vw, 100vw"
-      />
-    </div>
-  );
-}
-
 function ProductMain({
   selectedVariant,
   product,
@@ -223,24 +177,25 @@ function ProductMain({
   variants: Promise<ProductVariantsQuery | null>;
 }) {
   const { title, vendor, description, specs, fullDescription } = product;
+
   const cardCss =
-    "flex flex-col gap-8 rounded-3xl bg-neutral-100 p-6 lg:p-12 dark:bg-neutral-700";
+    "flex flex-col gap-6 md:gap-8 rounded-3xl bg-neutral-100 py-7 px-[24px] lg:p-9 dark:bg-neutral-700";
 
   return (
     <div>
-      <div className="sticky top-[var(--header-height)] flex flex-col gap-3">
+      <div className="sticky top-[var(--header-height)] flex flex-col gap-[18px]">
         <div className={cardCss}>
           <div className="flex flex-col gap-6">
             <ProductHeader
               title={title}
               vendor={vendor}
-              selectedVariant={selectedVariant || product.variants.nodes[0]}
+              selectedVariant={selectedVariant}
             />
           </div>
 
           <p>{description}</p>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-[18px] md:gap-8">
             <Suspense
               fallback={
                 <ProductForm
@@ -265,8 +220,9 @@ function ProductMain({
             </Suspense>
           </div>
         </div>
+
         <div className={cardCss}>
-          <Accordion type="multiple" className="lg:-m-6">
+          <Accordion type="multiple" className="-m-4 md:-m-6">
             {fullDescription ? (
               <AccordionItem value="description">
                 <AccordionTrigger>Description</AccordionTrigger>
@@ -287,9 +243,9 @@ function ProductMain({
                 </AccordionContent>
               </AccordionItem>
             ) : null}
-            <AccordionItem value="shipping">
+            <AccordionItem value="shipping" className="pb-0">
               <AccordionTrigger>Shipping</AccordionTrigger>
-              <AccordionContent>
+              <AccordionContent className="pb-9">
                 {/* Not sure if this should be coming from the data or just be standard for all products */}
                 See a full list of countries we ship to{" "}
                 <Link to="/help">here</Link>.
@@ -320,25 +276,18 @@ function ProductHeader({
     : 0;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-[18px]">
       {(displayVendor || isOnSale) && (
-        <div className="flex justify-between">
+        <div className="flex justify-between text-base leading-4 md:text-2xl/6">
           {displayVendor && <div>{vendor}</div>}
-          {isOnSale && (
-            <div className="text-right font-semibold text-red-brand">SALE</div>
-          )}
         </div>
       )}
-      <h1 className="font-sans text-[2rem] tracking-[-0.32px] sm:text-6xl sm:leading-[0.75]">
+      <h1 className="font-sans text-2xl font-bold leading-6 tracking-[-0.32px] md:text-4xl md:leading-[1.875rem]">
         {title}
       </h1>
 
-      <div className="flex gap-3 text-2xl tracking-[-0.48px]">
-        <Money
-          className="font-bold"
-          data={selectedVariant?.price!}
-          withoutTrailingZeros
-        />
+      <div className="flex gap-3 font-mono text-base leading-4 tracking-[-0.48px] md:text-2xl/6 md:leading-6">
+        <Money data={selectedVariant?.price!} withoutTrailingZeros />
         {isOnSale && (
           <>
             <s className="line-through opacity-50">
@@ -372,7 +321,7 @@ function ProductForm({
   let addToCartText = "Add to cart";
 
   // If the product has options (like size, color, etc), check whether each option has been selected
-  if (options.length > 0 && !selectedVariant) {
+  if (options.length > 0) {
     for (const option of options) {
       const selectedOption = searchParams.get(option.name);
       if (!selectedOption) {
@@ -383,7 +332,7 @@ function ProductForm({
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <>
       <VariantSelector
         handle={product.handle}
         options={product.options.filter((option) => option.values.length > 1)}
@@ -391,35 +340,37 @@ function ProductForm({
       >
         {({ option }) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
-      <AddToCartButton
-        disabled={!selectedVariant || !isAvailable}
-        onClick={() => {
-          open("cart");
-          publish("cart_viewed", {
-            cart,
-            prevCart,
-            shop,
-            url: window.location.href || "",
-          } as CartViewPayload);
-        }}
-        lines={
-          selectedVariant
-            ? [
-                {
-                  merchandiseId: selectedVariant.id,
-                  quantity: 1,
-                  // Add entire product to selected variant so we can determine gradient colours in an optimistic cart
-                  selectedVariant: { ...selectedVariant, product },
-                },
-              ]
-            : []
-        }
-      >
-        {product.availableForSale ? addToCartText : "Sold out"}
-      </AddToCartButton>
+      <div className="flex flex-col gap-2 md:gap-3">
+        <AddToCartButton
+          disabled={!selectedVariant || !isAvailable}
+          onClick={() => {
+            open("cart");
+            publish("cart_viewed", {
+              cart,
+              prevCart,
+              shop,
+              url: window.location.href || "",
+            } as CartViewPayload);
+          }}
+          lines={
+            selectedVariant
+              ? [
+                  {
+                    merchandiseId: selectedVariant.id,
+                    quantity: 1,
+                    // Add entire product to selected variant so we can determine gradient colours in an optimistic cart
+                    selectedVariant: { ...selectedVariant, product },
+                  },
+                ]
+              : []
+          }
+        >
+          {product.availableForSale ? addToCartText : "Sold out"}
+        </AddToCartButton>
 
-      {isAvailable ? <ShopPayButton /> : null}
-    </div>
+        {isAvailable ? <ShopPayButton /> : null}
+      </div>
+    </>
   );
 }
 
@@ -427,12 +378,12 @@ function ProductForm({
 export function ShopPayButton() {
   return (
     <Button
-      className="flex justify-center bg-shop-pay py-[22px] [--yamaha-shadow-color:theme(colors.shop-pay)]"
+      className="flex justify-center bg-shop-pay py-6 [--yamaha-shadow-color:theme(colors.shop-pay)]"
       intent="primary"
       size="lg"
       // TODO: Add link to immediate checkout
     >
-      <Icon name="shop-pay" className="h-6 w-auto" />
+      <Icon name="shop-pay" className="h-6 w-auto max-w-full" />
     </Button>
   );
 }
@@ -441,7 +392,9 @@ function ProductOptions({ option }: { option: VariantOption }) {
   return (
     <div
       key={option.name}
-      className={"grid grid-flow-col justify-stretch gap-1 lg:gap-4"}
+      className={
+        "grid grid-flow-col justify-stretch gap-2 lg:gap-4 [&>*]:min-w-12"
+      }
     >
       {option.values.map(({ value, isAvailable, isActive, to }) => {
         return (
