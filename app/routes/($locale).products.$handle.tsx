@@ -31,13 +31,19 @@ import {
   PRODUCT_DETAIL_FRAGMENT,
   PRODUCT_VARIANT_FRAGMENT,
 } from "~/lib/fragments";
-import { Button } from "~/components/ui/button";
+import { Button, ButtonWithWellText } from "~/components/ui/button";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "~/components/ui/accordion";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "~/components/ui/dropdown-menu";
 import Icon from "~/components/icon";
 import ProductImages from "~/components/product-images";
 
@@ -68,7 +74,7 @@ async function loadCriticalData({
   request,
 }: LoaderFunctionArgs) {
   const { handle } = params;
-  const { storefront } = context;
+  const { storefront, env } = context;
 
   if (!handle) {
     throw new Error("Expected product handle to be defined");
@@ -98,6 +104,7 @@ async function loadCriticalData({
   }
 
   return {
+    checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
     product,
   };
 }
@@ -129,7 +136,7 @@ function loadDeferredData({ context, params }: LoaderFunctionArgs) {
 }
 
 export default function Product() {
-  const { product, variants } = useLoaderData<typeof loader>();
+  const { product, variants, checkoutDomain } = useLoaderData<typeof loader>();
   let { selectedVariant } = product;
 
   // If a variant isn't selected, use the first variant for price, analytics, etc
@@ -147,6 +154,7 @@ export default function Product() {
         selectedVariant={selectedVariant}
         product={product}
         variants={variants}
+        checkoutDomain={checkoutDomain}
       />
       <Analytics.ProductView
         data={{
@@ -171,10 +179,12 @@ function ProductMain({
   selectedVariant,
   product,
   variants,
+  checkoutDomain,
 }: {
   product: ProductFragment;
   selectedVariant: ProductFragment["selectedVariant"];
   variants: Promise<ProductVariantsQuery | null>;
+  checkoutDomain: string;
 }) {
   const { title, vendor, description, specs, fullDescription } = product;
 
@@ -202,6 +212,7 @@ function ProductMain({
                   product={product}
                   selectedVariant={selectedVariant}
                   variants={[]}
+                  checkoutDomain={checkoutDomain}
                 />
               }
             >
@@ -214,6 +225,7 @@ function ProductMain({
                     product={product}
                     selectedVariant={selectedVariant}
                     variants={data?.product?.variants.nodes || []}
+                    checkoutDomain={checkoutDomain}
                   />
                 )}
               </Await>
@@ -308,10 +320,12 @@ function ProductForm({
   product,
   selectedVariant,
   variants,
+  checkoutDomain,
 }: {
   product: ProductFragment;
   selectedVariant: ProductFragment["selectedVariant"];
   variants: Array<ProductVariantFragment>;
+  checkoutDomain: string;
 }) {
   const { open } = useAside();
   const { publish, shop, cart, prevCart } = useAnalytics();
@@ -321,7 +335,7 @@ function ProductForm({
   let addToCartText = "Add to cart";
 
   // If the product has options (like size, color, etc), check whether each option has been selected
-  if (options.length > 0) {
+  if (variants.length > 1) {
     for (const option of options) {
       const selectedOption = searchParams.get(option.name);
       if (!selectedOption) {
@@ -368,31 +382,49 @@ function ProductForm({
           {product.availableForSale ? addToCartText : "Sold out"}
         </AddToCartButton>
 
-        {isAvailable ? <ShopPayButton /> : null}
+        {isAvailable ? (
+          <ShopPayButton
+            selectedVariant={selectedVariant}
+            checkoutDomain={checkoutDomain}
+          />
+        ) : null}
       </div>
     </>
   );
 }
 
 // ShopPayButton -- if reused pull out into a component
-export function ShopPayButton() {
+export function ShopPayButton({
+  selectedVariant,
+  checkoutDomain,
+}: {
+  selectedVariant: ProductFragment["selectedVariant"];
+  checkoutDomain: string;
+}) {
   return (
-    <Button
-      className="flex justify-center bg-shop-pay py-6 [--yamaha-shadow-color:theme(colors.shop-pay)]"
-      intent="primary"
-      size="lg"
-      // TODO: Add link to immediate checkout
+    <Link
+      to={`https://${checkoutDomain}/cart/${selectedVariant?.id.split("ProductVariant/")[1]}:1?payment=shop_pay&channel=hydrogen`}
     >
-      <Icon name="shop-pay" className="h-6 w-auto max-w-full" />
-    </Button>
+      <Button
+        className="flex justify-center bg-shop-pay py-6 [--yamaha-shadow-color:theme(colors.shop-pay)]"
+        intent="primary"
+        size="lg"
+      >
+        <Icon name="shop-pay" className="h-6 w-auto max-w-full" />
+      </Button>
+    </Link>
   );
 }
 
 function ProductOptions({ option }: { option: VariantOption }) {
-  return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(theme(spacing.12),1fr))] gap-2 lg:gap-4">
-      {option.values.map(({ value, isAvailable, isActive, to }) => {
-        return (
+  const [searchParams] = useSearchParams();
+  const selectedOption = searchParams.get(option.name);
+
+  // Size (XS, S, M, L, etc) should render buttons
+  if (option.name.toLowerCase() === "size") {
+    return (
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(theme(spacing.12),1fr))] gap-2 lg:gap-4">
+        {option.values.map(({ value, isAvailable, isActive, to }) => (
           <Button
             asChild
             key={option.name + value}
@@ -410,8 +442,50 @@ function ProductOptions({ option }: { option: VariantOption }) {
               <span>{value}</span>
             )}
           </Button>
-        );
-      })}
+        ))}
+      </div>
+    );
+  }
+
+  // Al other otions should render a dropdown
+  return (
+    <div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <ButtonWithWellText
+            size="icon"
+            wellPrefix={selectedOption ? selectedOption : `${option.name}`}
+          >
+            <Icon name="chevron-down" />
+          </ButtonWithWellText>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-fit md:w-[280px]">
+          {option.values.map(({ value, isAvailable, isActive, to }) => (
+            <DropdownMenuItem
+              asChild
+              className="justify-between"
+              key={option.name + value}
+            >
+              {isAvailable ? (
+                <Link
+                  prefetch="intent"
+                  preventScrollReset
+                  replace
+                  to={to}
+                  className="cursor-pointer no-underline"
+                >
+                  {value}
+                  {isActive ? <Icon name="check" /> : null}
+                </Link>
+              ) : (
+                <span className="cursor-not-allowed opacity-35">
+                  {value} (Sold Out)
+                </span>
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
