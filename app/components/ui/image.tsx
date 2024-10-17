@@ -1,5 +1,5 @@
 import { Image as HydrogenImage } from "@shopify/hydrogen";
-import { cn } from "~/lib";
+import { cn } from "~/lib/cn";
 
 export type HydrogenImageProps = Parameters<typeof HydrogenImage>[0];
 

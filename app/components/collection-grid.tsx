@@ -1,7 +1,7 @@
 import { Link } from "@remix-run/react";
 import { Money } from "@shopify/hydrogen";
 import type { RecommendedProductsQuery } from "storefrontapi.generated";
-import { Image } from "~/components/image";
+import { Image } from "~/components/ui/image";
 import { parseGradientColors } from "~/lib/metafields";
 import { cva } from "class-variance-authority";
 import clsx from "clsx";

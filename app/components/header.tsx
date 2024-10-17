@@ -10,7 +10,8 @@ import { ThemeToggle } from "~/components/theme-toggle";
 import Icon from "~/components/icon";
 import { TitleLogo } from "~/components/title-logo";
 import { Button, ButtonWithWellText } from "~/components/ui/button";
-import { useHydrated, useRelativeUrl } from "~/ui/primitives/utils";
+import { useRelativeUrl } from "~/lib/use-relative-url";
+import { useHydrated } from "~/lib/use-hydrated";
 import {
   Aside,
   AsideBody,
@@ -27,7 +28,6 @@ import clsx from "clsx";
 interface HeaderProps {
   menu: NonNullable<HeaderQuery["menu"]>;
   cart: Promise<CartApiQueryFragment | null>;
-  isLoggedIn: Promise<boolean>;
   className?: string;
 }
 

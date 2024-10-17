@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Await, Link } from "@remix-run/react";
 import type { FooterQuery, MenuFragment } from "storefrontapi.generated";
 import clsx from "clsx";
-import { useRelativeUrl } from "~/ui/primitives/utils";
+import { useRelativeUrl } from "~/lib/use-relative-url";
 
 interface FooterProps {
   footer: Promise<FooterQuery | null>;

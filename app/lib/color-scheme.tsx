@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useNavigation, useRouteLoaderData } from "@remix-run/react";
 import type { loader as rootLoader } from "~/root";
-import { useLayoutEffect } from "~/ui/primitives/utils";
+import { useLayoutEffect } from "./use-layout-effect";
 
 export type ColorScheme = "dark" | "light" | "system";
 

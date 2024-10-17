@@ -5,7 +5,7 @@ import type {
   CollectionVideoFragment,
   ProductImageFragment,
 } from "storefrontapi.generated";
-import { cn } from "~/lib";
+import { cn } from "~/lib/cn";
 
 // I don't see a good way to get this URL from the GraphQL API, should be fine to hardcode it here
 const DEFAULT_IMAGE = {

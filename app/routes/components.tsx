@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuContent,
 } from "~/components/ui/dropdown-menu";
-import { cn } from "~/lib";
+import { cn } from "~/lib/cn";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const selectedComponent = data?.selectedComponent;

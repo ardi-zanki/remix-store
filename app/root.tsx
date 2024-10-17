@@ -12,11 +12,15 @@ import {
   type ShouldRevalidateFunction,
   Link,
 } from "@remix-run/react";
-import { PageLayout } from "~/components/page-layout";
 import { FOOTER_QUERY, HEADER_QUERY } from "~/lib/fragments";
-import { parseColorScheme } from "./lib/color-scheme.server";
+import { parseColorScheme } from "~/lib/color-scheme.server";
 import clsx from "clsx";
 import { ColorSchemeScript, useColorScheme } from "~/lib/color-scheme";
+import { Hero } from "~/components/hero";
+import { Button } from "~/components/ui/button";
+import { AsideProvider } from "~/components/ui/aside";
+import { Header } from "~/components/header";
+import { Footer } from "~/components/footer";
 
 import interUrl from "/font/inter-roman-latin-var.woff2?url";
 import interItalicUrl from "/font/inter-italic-latin-var.woff2?url";
@@ -24,9 +28,6 @@ import sourceCodeProUrl from "/font/source-code-pro-roman-var.woff2?url";
 import sourceCodeProItalicUrl from "/font/source-code-pro-italic-var.woff2?url";
 
 import "./tailwind.css";
-import { Hero } from "./components/hero";
-import { Button } from "./components/ui/button";
-import { AsideProvider } from "./components/ui/aside";
 
 export type RootLoader = typeof loader;
 
@@ -186,7 +187,18 @@ export function Layout({ children }: { children?: React.ReactNode }) {
             consent={data.consent}
           >
             <AsideProvider>
-              <PageLayout {...data}>{children}</PageLayout>
+              {data.header.menu && (
+                <Header
+                  className="px-[var(--main-padding)]"
+                  menu={data.header.menu}
+                  cart={data.cart}
+                />
+              )}
+              <main className="px-[var(--main-padding)]">{children}</main>
+              <Footer
+                className="px-[var(--main-padding)]"
+                footer={data.footer}
+              />
             </AsideProvider>
           </Analytics.Provider>
         ) : (

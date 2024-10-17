@@ -1,6 +1,6 @@
 import { Slot } from "@radix-ui/react-slot";
 import { forwardRef } from "react";
-import { cn } from "~/lib";
+import { cn } from "~/lib/cn";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const button = cva(["block no-underline"], {

@@ -10,13 +10,13 @@ import type { CartLineUpdateInput } from "@shopify/hydrogen/storefront-api-types
 import { Link, type FetcherWithComponents } from "@remix-run/react";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
 import { useVariantUrl } from "~/lib/variants";
-import { Image } from "~/components/image";
+import { Image } from "~/components/ui/image";
 import { parseGradientColors } from "~/lib/metafields";
 import { AsideDescription } from "~/components/ui/aside";
 import { Button } from "~/components/ui/button";
 import Icon from "~/components/icon";
 import clsx from "clsx";
-import { cn } from "~/lib";
+import { cn } from "~/lib/cn";
 
 type CartLine = OptimisticCartLine<CartApiQueryFragment["lines"]["nodes"][0]>;
 

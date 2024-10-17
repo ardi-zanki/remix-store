@@ -1,5 +1,5 @@
 import { parseGradientColors } from "~/lib/metafields";
-import { Image, type ImageGradientColors } from "./image";
+import { Image, type ImageGradientColors } from "./ui/image";
 
 import useEmblaCarousel from "embla-carousel-react";
 import { DotButton, useDotButton } from "~/components/carousel/dot-button";
@@ -8,7 +8,7 @@ import {
   PrevButton,
   usePrevNextButtons,
 } from "~/components/carousel/arrow-buttons";
-import { cn } from "~/lib";
+import { cn } from "~/lib/cn";
 
 import type {
   ProductFragment,
