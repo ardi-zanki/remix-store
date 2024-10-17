@@ -13,11 +13,6 @@
     "codegen": "shopify hydrogen codegen",
     "format": "prettier --write ."
   },
-  "prettier": {
-    "plugins": [
-      "prettier-plugin-tailwindcss"
-    ]
-  },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.1",
     "@radix-ui/react-checkbox": "^1.1.2",
@@ -27,8 +22,6 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@remix-run/react": "^2.13.1",
     "@remix-run/server-runtime": "^2.13.1",
-    "@shopify/cli": "^3.68.1",
-    "@shopify/cli-hydrogen": "^8.4.6",
     "@shopify/hydrogen": "^2024.7.9",
     "@shopify/remix-oxygen": "^2.0.8",
     "class-variance-authority": "^0.7.0",
@@ -37,19 +30,21 @@
     "embla-carousel-react": "^8.3.0",
     "graphql": "^16.9.0",
     "graphql-tag": "^2.12.6",
-    "isbot": "^3.8.0",
+    "isbot": "^4.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.3",
+    "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "5.0.3",
     "@remix-run/dev": "^2.13.1",
     "@remix-run/eslint-config": "^2.13.1",
+    "@shopify/cli": "^3.68.1",
     "@shopify/hydrogen-codegen": "^0.3.1",
     "@shopify/mini-oxygen": "^3.0.6",
     "@shopify/oxygen-workers-types": "^4.1.4",
+    "@shopify/prettier-config": "^1.1.2",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/eslint": "^9.6.1",
     "@types/react": "^18.3.11",
@@ -61,9 +56,9 @@
     "postcss": "^8.4.47",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.8",
-    "tailwindcss": "^3.4.13",
+    "tailwindcss": "^3.4.14",
     "typescript": "^5.6.3",
-    "vite": "^5.4.8",
+    "vite": "^5.4.9",
     "vite-plugin-icons-spritesheet": "^2.2.1",
     "vite-tsconfig-paths": "^4.3.2"
   },
