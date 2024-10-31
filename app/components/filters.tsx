@@ -1,4 +1,6 @@
-import { Form, useSearchParams, useSubmit } from "@remix-run/react";
+import { createContext, useContext, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { Form, useSearchParams } from "@remix-run/react";
 import Icon from "~/components/icon";
 import { Button, ButtonWithWellText } from "~/components/ui/button";
 import {
@@ -23,38 +25,90 @@ import {
   AccordionContent,
 } from "~/components/ui/accordion";
 import clsx from "clsx";
-import * as RadioGroup from "@radix-ui/react-radio-group";
+import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import * as Checkbox from "@radix-ui/react-checkbox";
+import {
+  type FilterKey,
+  SORT_KEY,
+  SORT_OPTIONS,
+  PRODUCT_TYPES,
+  useCurrentSort,
+  useCurrentProductTypes,
+  FILTER,
+  useIsFilterApplied,
+  useIsAvailable,
+  usePrice,
+  useFiltersSubmit,
+} from "~/lib/filters";
 
-export function FiltersToolbar() {
+type FiltersToolbarProps = {
+  itemCount?: number;
+};
+
+export function FiltersToolbar({ itemCount }: FiltersToolbarProps) {
   return (
     <div className="flex h-[var(--header-height)] items-center justify-between">
-      <FiltersAside />
+      <FiltersTrigger itemCount={itemCount} />
       <SortDropdown />
     </div>
   );
 }
 
-function FiltersAside() {
-  const submit = useSubmit();
+/**
+ * Trigger and label for the filters aside
+ */
+function FiltersTrigger({ itemCount }: FiltersToolbarProps) {
+  const isFilterApplied = useIsFilterApplied();
+  const intent = isFilterApplied ? "primary" : "secondary";
+
+  const isRenderedWithinAside = useContext(filtersAsideCheckContext);
+
+  if (!isRenderedWithinAside) {
+    throw new Error("FiltersTrigger must be used within a FiltersAside");
+  }
 
   return (
-    <Aside>
+    <>
       <div className="md:hidden">
         <AsideTrigger asChild>
-          <Button size="icon">
+          <Button intent={intent} size="icon">
             <Icon name="filter" />
           </Button>
         </AsideTrigger>
       </div>
       <div className="hidden w-[250px] md:block">
-        {/* TODO: This trigger isn't picking up the :before pseudo-element */}
         <AsideTrigger asChild>
-          <ButtonWithWellText size="icon" wellPostfix="Showing 6 items">
+          <ButtonWithWellText
+            intent={intent}
+            size="icon"
+            wellPostfix={
+              itemCount ? `Showing ${itemCount} items` : "Loading items"
+            }
+          >
             <Icon name="filter" />
           </ButtonWithWellText>
         </AsideTrigger>
       </div>
+    </>
+  );
+}
+
+const filtersAsideCheckContext = createContext(false);
+
+/**
+ * Aside that contains the filters and the form for submitting them
+ *
+ * Note: This must be rendered above any Suspense boundaries, otherwise it'll
+ * it'll be remounted and close when the data finishes loading
+ */
+export function FiltersAside({ children }: { children: React.ReactNode }) {
+  const [formRef, submitForm] = useFiltersSubmit();
+
+  return (
+    <Aside>
+      <filtersAsideCheckContext.Provider value={true}>
+        {children}
+      </filtersAsideCheckContext.Provider>
 
       <AsideContent side="left">
         <AsideHeader>
@@ -62,27 +116,21 @@ function FiltersAside() {
         </AsideHeader>
         <AsideDescription className="sr-only">filter products</AsideDescription>
         <AsideBody>
-          <Form
-            // This form automatically submits any time any of the filter controls change
-            onChange={(e) => {
-              submit(e.currentTarget, { preventScrollReset: true });
-            }}
-            method="get"
-            preventScrollReset
-          >
+          <Form ref={formRef}>
+            <HiddenFilterInputs keys={[SORT_KEY]} include />
             <Accordion
               type="multiple"
               className="gap-0"
               defaultValue={["availability", "price", "product-type"]}
             >
               <FilterAccordionItem title="Availability" value="availability">
-                <FilterProductStock />
+                <FilterProductStock submitForm={submitForm} />
               </FilterAccordionItem>
               <FilterAccordionItem title="Price" value="price">
-                <FilterPriceRange />
+                <FilterPriceRange submitForm={submitForm} />
               </FilterAccordionItem>
               <FilterAccordionItem title="Product Type" value="product-type">
-                <FilterProductType />
+                <FilterProductType submitForm={submitForm} />
               </FilterAccordionItem>
             </Accordion>
           </Form>
@@ -117,57 +165,111 @@ function FilterAccordionItem({
   );
 }
 
-function FilterProductStock() {
-  const [searchParams] = useSearchParams();
-  let availability: string | undefined =
-    searchParams.get("availability") || undefined;
-  if (availability !== "in-stock" && availability !== "out-of-stock") {
-    availability = undefined;
-  }
+type FilterControlsProps = {
+  submitForm: ReturnType<typeof useFiltersSubmit>[1];
+};
 
+/**
+ * Acts like a radio button, however if you re-select the same value it'll
+ * remove it from the form data
+ */
+function FilterProductStock({ submitForm }: FilterControlsProps) {
+  const available = useIsAvailable();
+  const [value, setValue] = useState(available);
+
+  // Note: theoretically we can remove `flushSync` here and drive the state via
+  // `onValueChange`: https://x.com/BrooksLybrand/status/1851984020411687409
   return (
-    <RadioGroup.Root
+    <ToggleGroup.Root
       className="flex w-[300px] flex-col gap-3"
+      type="single"
+      value={value}
       aria-label="select availability"
-      name="availability"
-      defaultValue={availability}
     >
-      <RadioGroup.Item value="in-stock" id="in-stock" asChild>
+      <ToggleGroup.Item value="true" asChild>
         <Button
           className="flex justify-between text-left uppercase"
-          intent={availability === "in-stock" ? "primary" : "secondary"}
+          intent={value === "true" ? "primary" : "secondary"}
+          onClick={() => {
+            // remove the value from the form if it's already set
+            flushSync(() => {
+              setValue(value === "true" ? undefined : "true");
+            });
+            submitForm();
+          }}
         >
           In Stock
-          {availability === "in-stock" ? <Icon name="check" /> : null}
+          {value === "true" ? <Icon name="check" /> : null}
         </Button>
-      </RadioGroup.Item>
-      <RadioGroup.Item value="out-of-stock" id="out-of-stock" asChild>
+      </ToggleGroup.Item>
+      <input
+        type="checkbox"
+        name={FILTER.AVAILABLE}
+        value="true"
+        checked={value === "true"}
+        tabIndex={-1}
+        aria-hidden="true"
+        readOnly
+        className="sr-only"
+      />
+
+      <ToggleGroup.Item value="false" asChild>
         <Button
           className="flex justify-between text-left uppercase"
-          intent={availability === "out-of-stock" ? "primary" : "secondary"}
+          intent={value === "false" ? "primary" : "secondary"}
+          onClick={() => {
+            // remove the value from the form if it's already set
+            flushSync(() => {
+              setValue(value === "false" ? undefined : "false");
+            });
+            submitForm();
+          }}
         >
           Out of Stock
-          {availability === "out-of-stock" ? <Icon name="check" /> : null}
+          {value === "false" ? <Icon name="check" /> : null}
         </Button>
-      </RadioGroup.Item>
-    </RadioGroup.Root>
+      </ToggleGroup.Item>
+      <input
+        type="checkbox"
+        name={FILTER.AVAILABLE}
+        value="false"
+        checked={value === "false"}
+        tabIndex={-1}
+        aria-hidden="true"
+        readOnly
+        className="sr-only"
+      />
+    </ToggleGroup.Root>
   );
 }
 
-// TODO: need some client-side validation and probably want to throttle submitting the form
-function FilterPriceRange() {
-  const [searchParams] = useSearchParams();
-  const min = searchParams.get("min") || "";
-  const max = searchParams.get("max") || "";
+function FilterPriceRange({ submitForm }: FilterControlsProps) {
+  const { min, max } = usePrice();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedSubmit = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      submitForm();
+      timeoutRef.current = null;
+    }, 500);
+  };
 
   return (
-    <div className="flex items-center gap-3 font-bold">
+    <fieldset
+      className="flex items-center gap-3 font-bold"
+      onChange={() => {
+        debouncedSubmit();
+      }}
+    >
       <label htmlFor="from">
         From <span className="sr-only">minimum price</span>
       </label>
       <PriceInput
         id="from"
-        name="min"
+        name={FILTER.PRICE_MIN}
         placeholder="0"
         defaultValue={min}
         min={0}
@@ -178,13 +280,13 @@ function FilterPriceRange() {
       </label>
       <PriceInput
         id="to"
-        name="max"
+        name={FILTER.PRICE_MAX}
         placeholder="1000"
         defaultValue={max}
         min={min}
         max={1000}
       />
-    </div>
+    </fieldset>
   );
 }
 
@@ -215,29 +317,23 @@ function PriceInput({
   );
 }
 
-// TODO: get this from the storefront API
-const productTypes = [
-  "apparel",
-  "accessories",
-  "stationary",
-  "stickers",
-  "toys",
-];
-
-function FilterProductType() {
-  const [searchParams] = useSearchParams();
-
-  const selectedProductTypes = new Set(searchParams.getAll("product-type"));
+function FilterProductType({ submitForm }: FilterControlsProps) {
+  const selectedProductTypes = useCurrentProductTypes();
 
   return (
-    <div className="flex flex-wrap gap-3">
-      {productTypes.map((productType) => {
+    <fieldset
+      className="flex flex-wrap gap-3"
+      onChange={() => {
+        submitForm();
+      }}
+    >
+      {PRODUCT_TYPES.map((productType) => {
         const checked = selectedProductTypes.has(productType);
         return (
           <Checkbox.Root
             key={productType}
             className="CheckboxRoot"
-            name="product-type"
+            name={FILTER.PRODUCT_TYPE}
             value={productType}
             defaultChecked={checked}
             asChild
@@ -252,40 +348,35 @@ function FilterProductType() {
           </Checkbox.Root>
         );
       })}
-    </div>
+    </fieldset>
   );
 }
 
-const sortOptions = [
-  { value: "best-selling", label: "Best Selling" },
-  { value: "price-high-to-low", label: "Price: High To Low" },
-  { value: "price-low-to-high", label: "Price: Low To High" },
-  { value: "newest", label: "Newest" },
-];
-
 export function SortDropdown() {
-  const [searchParams] = useSearchParams();
-  const currentSort = searchParams.get("sort") || sortOptions[0].value;
-
-  const currentSortLabel =
-    sortOptions.find((option) => option.value === currentSort)?.label || "Sort";
+  const currentSort = useCurrentSort();
 
   return (
     <DropdownMenu>
       <div className="w-fit md:w-[280px]">
         <DropdownMenuTrigger asChild>
-          <ButtonWithWellText size="icon" wellPrefix={currentSortLabel}>
+          <ButtonWithWellText size="icon" wellPrefix={currentSort?.label}>
             <Icon name="chevron-down" />
           </ButtonWithWellText>
         </DropdownMenuTrigger>
       </div>
       <DropdownMenuContent className="w-fit md:w-[280px]" align="end">
-        <Form method="get" className="flex flex-col gap-1" preventScrollReset>
-          {sortOptions.map((option) => (
+        <Form
+          method="get"
+          className="flex flex-col gap-1"
+          preventScrollReset
+          replace
+        >
+          <HiddenFilterInputs keys={[SORT_KEY]} include={false} />
+          {SORT_OPTIONS.map((option) => (
             <SortButton
               key={option.value}
               value={option.value}
-              selected={currentSort === option.value}
+              selected={currentSort.value === option.value}
             >
               {option.label}
             </SortButton>
@@ -294,6 +385,32 @@ export function SortDropdown() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+/**
+ * Add hidden inputs for all filters set in the query params
+ * Takes an array of keys to include or exclude from the search params
+ */
+export function HiddenFilterInputs({
+  keys = [],
+  include = true,
+}: {
+  keys: Array<FilterKey | typeof SORT_KEY>;
+  include?: boolean;
+}) {
+  const [searchParams] = useSearchParams();
+  const keysToIncludeSet = new Set(keys);
+
+  return Array.from(searchParams.entries()).map(([key, value]) => {
+    if (include && !keysToIncludeSet.has(key)) {
+      return null;
+    }
+    if (!include && keysToIncludeSet.has(key)) {
+      return null;
+    }
+
+    return <input key={key} type="hidden" name={key} value={value} />;
+  });
 }
 
 function SortButton({
@@ -307,7 +424,7 @@ function SortButton({
 }) {
   return (
     <DropdownMenuItem asChild className="justify-between">
-      <button value={value} name="sort">
+      <button value={value} name={SORT_KEY}>
         {children}
         {selected ? <Icon name="check" /> : null}
       </button>

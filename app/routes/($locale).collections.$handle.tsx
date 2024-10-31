@@ -6,10 +6,12 @@ import {
 } from "@shopify/remix-oxygen";
 import { Await, useLoaderData, type MetaFunction } from "@remix-run/react";
 import { Analytics } from "@shopify/hydrogen";
-import { PRODUCT_ITEM_FRAGMENT } from "~/lib/fragments";
 import { CollectionGrid } from "~/components/collection-grid";
 import { Hero } from "~/components/hero";
-import { FiltersToolbar } from "~/components/filters";
+import { FiltersAside, FiltersToolbar } from "~/components/filters";
+
+import { COLLECTION_QUERY } from "~/lib/queries";
+import { getFilterQueryVariables } from "~/lib/filters/query-variables.server";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   let title = `The Remix Store`;
@@ -23,7 +25,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title }];
 };
 
-export async function loader({ context, params }: LoaderFunctionArgs) {
+export async function loader({ params, request, context }: LoaderFunctionArgs) {
   const { handle } = params;
   const { storefront } = context;
 
@@ -31,10 +33,16 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
     throw redirect("/collections");
   }
 
+  const url = new URL(request.url);
+  const { searchParams } = url;
+  const variables = { handle, ...getFilterQueryVariables(searchParams) };
+
   // load the initial products we want to SSR
   const { collection } = await storefront.query(COLLECTION_QUERY, {
-    variables: { handle, first: 8 },
-    // Add other queries here, so that they are loaded in parallel
+    variables: {
+      ...variables,
+      first: 8,
+    },
   });
 
   if (!collection) {
@@ -42,17 +50,21 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
       status: 404,
     });
   }
+
   const { hasNextPage, endCursor } = collection.products.pageInfo;
 
-  // lazy load the remaing products if any
+  // lazy load the remaining products if any
   if (hasNextPage) {
     const remainingProducts = storefront
       .query(COLLECTION_QUERY, {
         // if we ever have more than 258 products, we need to figure out a
         // different strategy. Honestly, before that point we'll need to
         // paginate, but loading all is fine for now
-        variables: { handle, endCursor, first: 250 },
-        // Add other queries here, so that they are loaded in parallel
+        variables: {
+          ...variables,
+          endCursor,
+          first: 250,
+        },
       })
       .then(({ collection }) => collection?.products.nodes);
 
@@ -72,30 +84,42 @@ export default function Collection() {
         subtitle={collection.description}
         image={collection.image}
       />
-      <FiltersToolbar />
 
-      {!remainingProducts ? (
-        <CollectionGrid products={collection.products.nodes} />
-      ) : (
-        <Suspense
-          fallback={
-            <CollectionGrid
-              products={collection.products.nodes}
-              loadingCount={4}
-            />
-          }
-        >
-          <Await resolve={remainingProducts}>
-            {(remainingProducts) => {
-              const products = [
-                ...collection.products.nodes,
-                ...remainingProducts,
-              ];
-              return <CollectionGrid products={products} />;
-            }}
-          </Await>
-        </Suspense>
-      )}
+      <FiltersAside>
+        {!remainingProducts ? (
+          <>
+            <FiltersToolbar itemCount={collection.products.nodes.length} />
+            <CollectionGrid products={collection.products.nodes} />
+          </>
+        ) : (
+          <Suspense
+            fallback={
+              <>
+                <FiltersToolbar />
+                <CollectionGrid
+                  products={collection.products.nodes}
+                  loadingProductCount={4}
+                />
+              </>
+            }
+          >
+            <Await resolve={remainingProducts}>
+              {(remainingProducts) => {
+                const products = [
+                  ...collection.products.nodes,
+                  ...remainingProducts,
+                ];
+                return (
+                  <>
+                    <FiltersToolbar itemCount={products.length} />
+                    <CollectionGrid products={products} />
+                  </>
+                );
+              }}
+            </Await>
+          </Suspense>
+        )}
+      </FiltersAside>
 
       <Analytics.CollectionView
         data={{
@@ -108,46 +132,3 @@ export default function Collection() {
     </div>
   );
 }
-
-// NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
-const COLLECTION_QUERY = `#graphql
-  ${PRODUCT_ITEM_FRAGMENT}
-  query Collection(
-    $handle: String!
-    $country: CountryCode
-    $language: LanguageCode
-    $first: Int
-    $last: Int
-    $startCursor: String
-    $endCursor: String
-  ) @inContext(country: $country, language: $language) {
-    collection(handle: $handle) {
-      id
-      handle
-      title
-      description
-      image {
-        ...ProductImage
-      }
-      seo {
-        title
-      }
-      products(
-        first: $first,
-        last: $last,
-        before: $startCursor,
-        after: $endCursor
-      ) {
-        nodes {
-          ...ProductItem
-        }
-        pageInfo {
-          hasPreviousPage
-          hasNextPage
-          endCursor
-          startCursor
-        }
-      }
-    }
-  }
-` as const;
