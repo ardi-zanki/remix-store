@@ -1,4 +1,4 @@
-const MERCHANISE_PRODUCT_FRAGMENT = `#graphql
+const MERCHANDISE_PRODUCT_FRAGMENT = `#graphql
   fragment MerchadiseProduct on Product {
     handle
     title
@@ -124,7 +124,7 @@ export const CART_QUERY_FRAGMENT = `#graphql
       applicable
     }
   }
-  ${MERCHANISE_PRODUCT_FRAGMENT}
+  ${MERCHANDISE_PRODUCT_FRAGMENT}
 ` as const;
 
 const MENU_FRAGMENT = `#graphql
@@ -259,7 +259,9 @@ export const PRODUCT_DETAIL_FRAGMENT = `#graphql
     description
     options {
       name
-      values
+      optionValues {
+        name
+      }
     }
     selectedVariant: variantBySelectedOptions(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {
       ...ProductVariant
