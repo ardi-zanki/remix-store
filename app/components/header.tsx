@@ -22,7 +22,7 @@ import {
   useAside,
 } from "~/components/ui/aside";
 import { CartMain } from "~/components/cart";
-import clsx from "clsx";
+import { clsx } from "clsx";
 
 interface HeaderProps {
   menu: NonNullable<HeaderQuery["menu"]>;

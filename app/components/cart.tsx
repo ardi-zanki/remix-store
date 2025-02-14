@@ -15,7 +15,7 @@ import { parseGradientColors } from "~/lib/metafields";
 import { AsideDescription } from "~/components/ui/aside";
 import { Button } from "~/components/ui/button";
 import Icon from "~/components/icon";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { cn } from "~/lib/cn";
 
 type CartLine = OptimisticCartLine<CartApiQueryFragment["lines"]["nodes"][0]>;

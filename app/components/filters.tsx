@@ -29,7 +29,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "~/components/ui/accordion";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import {

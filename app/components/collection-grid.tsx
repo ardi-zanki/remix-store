@@ -4,7 +4,7 @@ import type { ProductItemFragment } from "storefrontapi.generated";
 import { Image } from "~/components/ui/image";
 import { parseGradientColors } from "~/lib/metafields";
 import { cva } from "class-variance-authority";
-import clsx from "clsx";
+import { clsx } from "clsx";
 
 interface CollectionGridProps {
   products?: ProductItemFragment[];

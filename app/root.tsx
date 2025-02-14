@@ -14,7 +14,7 @@ import {
 } from "@remix-run/react";
 import { FOOTER_QUERY, HEADER_QUERY } from "~/lib/fragments";
 import { parseColorScheme } from "~/lib/color-scheme.server";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { ColorSchemeScript, useColorScheme } from "~/lib/color-scheme";
 import { Hero } from "~/components/hero";
 import { Button } from "~/components/ui/button";
@@ -22,10 +22,12 @@ import { AsideProvider } from "~/components/ui/aside";
 import { Header } from "~/components/header";
 import { Footer } from "~/components/footer";
 
+/* eslint-disable import/no-unresolved */
 import interUrl from "/font/inter-roman-latin-var.woff2?url";
 import interItalicUrl from "/font/inter-italic-latin-var.woff2?url";
 import sourceCodeProUrl from "/font/source-code-pro-roman-var.woff2?url";
 import sourceCodeProItalicUrl from "/font/source-code-pro-italic-var.woff2?url";
+/* eslint-enable import/no-unresolved */
 
 import "./tailwind.css";
 
