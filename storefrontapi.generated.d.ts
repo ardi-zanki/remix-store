@@ -438,6 +438,58 @@ export type CollectionVideoFragment = Pick<StorefrontAPI.Video, 'id'> & {
   >;
 };
 
+export type LookbookImagesQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type LookbookImagesQuery = {
+  lookbookEntries: {
+    nodes: Array<
+      Pick<StorefrontAPI.Metaobject, 'handle'> & {
+        fields: Array<
+          {__typename: 'MetaobjectField'} & {
+            reference?: StorefrontAPI.Maybe<
+              | {
+                  __typename:
+                    | 'Collection'
+                    | 'GenericFile'
+                    | 'Metaobject'
+                    | 'Model3d'
+                    | 'Page'
+                    | 'ProductVariant'
+                    | 'Video';
+                }
+              | ({__typename: 'MediaImage'} & Pick<
+                  StorefrontAPI.MediaImage,
+                  'id' | 'alt'
+                > & {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<
+                        StorefrontAPI.Image,
+                        'id' | 'altText' | 'url' | 'width' | 'height'
+                      >
+                    >;
+                  })
+              | ({__typename: 'Product'} & Pick<
+                  StorefrontAPI.Product,
+                  'id' | 'handle'
+                > & {
+                    priceRange: {
+                      minVariantPrice: Pick<
+                        StorefrontAPI.MoneyV2,
+                        'amount' | 'currencyCode'
+                      >;
+                    };
+                  })
+            >;
+          }
+        >;
+      }
+    >;
+  };
+};
+
 export type CollectionQueryVariables = StorefrontAPI.Exact<{
   handle: StorefrontAPI.Scalars['String']['input'];
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
@@ -793,6 +845,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query Footer(\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    remixShop: menu(handle: "the-remix-shop") {\n      ...Menu\n    }\n    remixCommunity: menu(handle: "remix-community") {\n      ...Menu\n    }\n    remixResources: menu(handle: "remix-resources") {\n      ...Menu\n    }\n    hydrogenResources: menu(handle: "hydrogen-resources") {\n      ...Menu\n    }\n  }\n  #graphql\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment Menu on Menu {\n    id\n    title\n    items {\n      ...ParentMenuItem\n    }\n  }\n\n': {
     return: FooterQuery;
     variables: FooterQueryVariables;
+  };
+  '#graphql\n  #graphql\n  fragment ProductImage on Image {\n    id\n    altText\n    url\n    width\n    height\n  }\n\n  query LookbookImages (\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    lookbookEntries: metaobjects(type: "lookbook_entry", first: 5) {\n      nodes {\n        handle\n        fields {\n          __typename\n          reference {\n            __typename\n            ... on MediaImage {\n              id\n              alt\n              image {\n                ...ProductImage\n              }\n            }\n            ... on Product {\n              id\n              handle\n              priceRange {\n                minVariantPrice {\n                  amount\n                  currencyCode\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n': {
+    return: LookbookImagesQuery;
+    variables: LookbookImagesQueryVariables;
   };
   '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    tags\n    availableForSale\n    featuredImage {\n      ...ProductImage\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n    images(first: 1) {\n      nodes {\n        ...ProductImage\n      }\n    }\n    variants(first: 1) {\n      nodes {\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          amount\n          currencyCode\n        }\n        compareAtPrice {\n          amount\n          currencyCode\n        }\n      }\n    }\n    gradientColors: metafield(key: "images_gradient_background", namespace: "custom") {\n      value\n    }\n  }\n  #graphql\n  fragment ProductImage on Image {\n    id\n    altText\n    url\n    width\n    height\n  }\n\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $filters: [ProductFilter!]\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      image {\n        ...ProductImage\n      }\n      seo {\n        title\n      }\n      products(\n        first: $first,\n        last: $last,\n        before: $startCursor,\n        after: $endCursor\n        sortKey: $sortKey\n        reverse: $reverse\n        filters: $filters\n      ) {\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n    }\n  }\n': {
     return: CollectionQuery;
