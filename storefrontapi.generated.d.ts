@@ -438,6 +438,89 @@ export type CollectionVideoFragment = Pick<StorefrontAPI.Video, 'id'> & {
   >;
 };
 
+export type HeroQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type HeroQuery = {
+  hero?: StorefrontAPI.Maybe<{
+    masthead?: StorefrontAPI.Maybe<{
+      reference?: StorefrontAPI.Maybe<
+        | {
+            __typename:
+              | 'Collection'
+              | 'GenericFile'
+              | 'Metaobject'
+              | 'Model3d'
+              | 'Page'
+              | 'Product'
+              | 'ProductVariant'
+              | 'Video';
+          }
+        | ({__typename: 'MediaImage'} & Pick<
+            StorefrontAPI.MediaImage,
+            'id' | 'alt'
+          > & {
+              image?: StorefrontAPI.Maybe<
+                Pick<
+                  StorefrontAPI.Image,
+                  'id' | 'altText' | 'url' | 'width' | 'height'
+                >
+              >;
+            })
+      >;
+    }>;
+    assetImages?: StorefrontAPI.Maybe<{
+      references?: StorefrontAPI.Maybe<{
+        nodes: Array<
+          | {
+              __typename:
+                | 'Collection'
+                | 'GenericFile'
+                | 'Metaobject'
+                | 'Model3d'
+                | 'Page'
+                | 'Product'
+                | 'ProductVariant'
+                | 'Video';
+            }
+          | ({__typename: 'MediaImage'} & Pick<
+              StorefrontAPI.MediaImage,
+              'id' | 'alt'
+            > & {
+                image?: StorefrontAPI.Maybe<
+                  Pick<
+                    StorefrontAPI.Image,
+                    'id' | 'altText' | 'url' | 'width' | 'height'
+                  >
+                >;
+              })
+        >;
+      }>;
+    }>;
+    product?: StorefrontAPI.Maybe<{
+      reference?: StorefrontAPI.Maybe<
+        | {
+            __typename:
+              | 'Collection'
+              | 'GenericFile'
+              | 'MediaImage'
+              | 'Metaobject'
+              | 'Model3d'
+              | 'Page'
+              | 'ProductVariant'
+              | 'Video';
+          }
+        | ({__typename: 'Product'} & Pick<
+            StorefrontAPI.Product,
+            'handle' | 'title'
+          >)
+      >;
+    }>;
+  }>;
+};
+
 export type LookbookImagesQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -464,6 +547,9 @@ export type LookbookImagesQuery = {
                   StorefrontAPI.MediaImage,
                   'id' | 'alt'
                 > & {
+                    presentation?: StorefrontAPI.Maybe<
+                      Pick<StorefrontAPI.MediaPresentation, 'id' | 'asJson'>
+                    >;
                     image?: StorefrontAPI.Maybe<
                       Pick<
                         StorefrontAPI.Image,
@@ -846,7 +932,11 @@ interface GeneratedQueryTypes {
     return: FooterQuery;
     variables: FooterQueryVariables;
   };
-  '#graphql\n  #graphql\n  fragment ProductImage on Image {\n    id\n    altText\n    url\n    width\n    height\n  }\n\n  query LookbookImages (\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    lookbookEntries: metaobjects(type: "lookbook_entry", first: 5) {\n      nodes {\n        handle\n        fields {\n          __typename\n          reference {\n            __typename\n            ... on MediaImage {\n              id\n              alt\n              image {\n                ...ProductImage\n              }\n            }\n            ... on Product {\n              id\n              handle\n              priceRange {\n                minVariantPrice {\n                  amount\n                  currencyCode\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  #graphql\n  fragment ProductImage on Image {\n    id\n    altText\n    url\n    width\n    height\n  }\n\n  query Hero (\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    hero: metaobject(handle: {handle: "hero_1", type: "hero"}) {\n      masthead: field(key: "masthead") {\n        reference {\n          __typename\n          ... on MediaImage {\n            id\n            alt\n            image {\n              ...ProductImage\n            }\n          }\n        }\n      }\n      assetImages: field(key: "asset_images") {\n        references(first: 100) {\n          nodes {\n            __typename\n            ... on MediaImage {\n              id\n              alt\n              image {\n                ...ProductImage\n              }\n            }\n          }\n        }\n      }\n      product: field(key: "product") {\n        reference {\n          __typename\n          ... on Product {\n            handle\n            title\n          }\n        }\n      }\n    }\n  }\n': {
+    return: HeroQuery;
+    variables: HeroQueryVariables;
+  };
+  '#graphql\n  #graphql\n  fragment ProductImage on Image {\n    id\n    altText\n    url\n    width\n    height\n  }\n\n  query LookbookImages (\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    lookbookEntries: metaobjects(type: "lookbook_entry", first: 5) {\n      nodes {\n        handle\n        fields {\n          __typename\n          reference {\n            __typename\n            ... on MediaImage {\n              id\n              alt\n              presentation {\n                id\n                asJson(format: IMAGE)\n              }\n              image {\n                ...ProductImage\n              }\n            }\n            ... on Product {\n              id\n              handle\n              priceRange {\n                minVariantPrice {\n                  amount\n                  currencyCode\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n': {
     return: LookbookImagesQuery;
     variables: LookbookImagesQueryVariables;
   };
