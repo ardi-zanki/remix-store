@@ -21,6 +21,7 @@ export const iconNames = [
   "chevron-left",
   "chevron-down",
   "check",
+  "cart",
   "bag",
 ] as const
 
