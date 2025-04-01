@@ -90,7 +90,7 @@ export default function Collection() {
         ref={ref}
         className="relative grid h-[200px] place-items-center md:h-[360px] lg:h-[400px] xl:h-[480px] 2xl:h-[540px]"
       >
-        <div className="font-title relative isolate w-full text-center text-2xl leading-[.9em] font-black tracking-[-0.17em] whitespace-nowrap uppercase select-none md:text-5xl lg:text-7xl">
+        <div className="font-title relative isolate w-full text-center text-2xl leading-[.8em] font-black tracking-[-0.23em] whitespace-nowrap uppercase select-none md:text-5xl lg:text-7xl">
           <h1 className="relative z-50 bg-black text-white select-text">
             {collection.title}
           </h1>
