@@ -1,16 +1,15 @@
-import { Suspense } from "react";
+import { useState, useEffect, useRef } from "react";
 import { data, type LoaderFunctionArgs } from "@shopify/remix-oxygen";
 import {
   Await,
   Link,
   useLoaderData,
-  type FetcherWithComponents,
   useSearchParams,
   type MetaArgs,
+  useFetcher,
 } from "@remix-run/react";
 import type {
   ProductFragment,
-  ProductVariantsQuery,
   ProductVariantFragment,
 } from "storefrontapi.generated";
 import {
@@ -21,19 +20,10 @@ import {
   getSelectedProductOptions,
   CartForm,
   Analytics,
-  type CartViewPayload,
   useAnalytics,
   RichText,
 } from "@shopify/hydrogen";
-import { useAside } from "~/components/ui/aside";
 import { FOOTER_QUERY } from "~/lib/fragments";
-import { Button, ButtonWithWellText } from "~/components/ui/button";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "~/components/ui/accordion";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -46,9 +36,9 @@ import { generateMeta } from "~/lib/meta";
 import type { RootLoader } from "~/root";
 import { getProductData, getProductVariants } from "~/lib/data/product.server";
 import { useRelativeUrl } from "~/lib/use-relative-url";
-
-/** The default vendor, which we hide because nobody cares */
-const DEFAULT_VENDOR = "Remix Swag Store";
+import { cva } from "class-variance-authority";
+import { cn } from "~/lib/cn";
+import { clsx } from "clsx";
 
 export function meta({
   data,
@@ -56,11 +46,11 @@ export function meta({
 }: MetaArgs<typeof loader, { root: RootLoader }>) {
   if (!data) return generateMeta();
 
-  const { product } = data;
-  const { siteUrl } = matches[0].data;
+  let { product } = data;
+  let { siteUrl } = matches[0].data;
 
   // Use product image if available
-  const image = product.images?.nodes[0]?.url
+  let image = product.images?.nodes[0]?.url
     ? product.images.nodes[0].url
     : "/og_image.jpg";
 
@@ -75,22 +65,19 @@ export function meta({
 
 export async function loader(args: LoaderFunctionArgs) {
   let { request, params, context } = args;
-  let { storefront, env } = context;
+  let { storefront } = context;
   let { handle } = params;
 
   if (!handle) {
     throw new Error("Expected product handle to be defined");
   }
 
-  let variants = getProductVariants(storefront, {
+  let variantsPromise = getProductVariants(storefront, {
     variables: { handle },
-  }).catch((error) => {
-    console.error(error);
-    return null;
   });
 
   // Not sure if this will always be the same as the footer menu
-  const menuPromise = storefront
+  let menuPromise = storefront
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
     })
@@ -99,7 +86,7 @@ export async function loader(args: LoaderFunctionArgs) {
       if (!data.menu) {
         return menu;
       }
-      for (const item of data.menu.items) {
+      for (let item of data.menu.items) {
         if (!item.url) continue;
         menu.push({
           label: item.title,
@@ -116,10 +103,13 @@ export async function loader(args: LoaderFunctionArgs) {
     },
   });
 
-  let [menu, product] = await Promise.all([menuPromise, productPromise]);
+  let [menu, product, variants] = await Promise.all([
+    menuPromise,
+    productPromise,
+    variantsPromise,
+  ]);
 
   return data({
-    checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
     menu,
     product,
     variants,
@@ -127,8 +117,7 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export default function Product() {
-  const { menu, product, variants, checkoutDomain } =
-    useLoaderData<typeof loader>();
+  let { menu, product, variants } = useLoaderData<typeof loader>();
   let { selectedVariant } = product;
 
   // If a variant isn't selected, use the first variant for price, analytics, etc
@@ -146,7 +135,6 @@ export default function Product() {
         selectedVariant={selectedVariant}
         product={product}
         variants={variants}
-        checkoutDomain={checkoutDomain}
       />
 
       <Analytics.ProductView
@@ -191,10 +179,10 @@ function CollectionsMenu({ menu }: { menu: MenuItem[] }) {
 }
 
 function MenuLink({ to, children }: { to: string; children: React.ReactNode }) {
-  const { url } = useRelativeUrl(to);
+  let { url } = useRelativeUrl(to);
   return (
     <Link
-      className="text-xs leading-5 text-neutral-400 transition-[color] hover:text-white lg:text-base lg:leading-6"
+      className="text-xs leading-5 text-white/90 transition-[color] hover:text-white lg:text-base lg:leading-6"
       to={url}
     >
       {children}
@@ -206,29 +194,27 @@ function ProductMain({
   selectedVariant,
   product,
   variants,
-  checkoutDomain,
 }: {
   product: ProductFragment;
   selectedVariant: NonNullable<ProductFragment["selectedVariant"]>;
-  variants: Promise<ProductVariantsQuery | null>;
-  checkoutDomain: string;
+  variants: ProductVariantFragment[];
 }) {
-  const { title, category, description, technicalDescription } = product;
+  let { title, category, description, technicalDescription } = product;
 
-  const price = Number(selectedVariant.price.amount || 0);
-  const compareAtPrice = Number(selectedVariant.compareAtPrice?.amount || 0);
-  const isOnSale = price < compareAtPrice;
-  const percentageOff = isOnSale
+  let price = Number(selectedVariant.price.amount || 0);
+  let compareAtPrice = Number(selectedVariant.compareAtPrice?.amount || 0);
+  let isOnSale = price < compareAtPrice;
+  let percentageOff = isOnSale
     ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
     : 0;
 
   return (
-    <div className="static top-(--header-height) mx-4 flex max-h-fit flex-col gap-6 text-white md:sticky md:mx-0 md:max-w-[410px] md:min-w-[300px] md:basis-1/3 lg:gap-9 lg:pt-32">
+    <div className="static top-(--header-height) mx-4 flex max-h-fit flex-col gap-6 text-white md:sticky md:mx-0 md:max-w-xl md:basis-1/3 lg:gap-9 lg:pt-32">
       <div className="flex flex-col gap-4">
         {category ? (
           <p className="text-xs lg:text-base">{category?.name}</p>
         ) : null}
-        <h1 className="min-w-fit font-sans text-2xl font-bold lg:text-4xl">
+        <h1 className="min-w-max font-sans text-2xl font-bold lg:text-4xl">
           {title}
         </h1>
         <div className="flex gap-3">
@@ -247,32 +233,11 @@ function ProductMain({
         </div>
       </div>
 
-      <div className="flex flex-col gap-[18px] md:gap-8">
-        <Suspense
-          fallback={
-            <ProductForm
-              product={product}
-              selectedVariant={selectedVariant}
-              variants={[]}
-              checkoutDomain={checkoutDomain}
-            />
-          }
-        >
-          <Await
-            errorElement="There was a problem loading product variants"
-            resolve={variants}
-          >
-            {(data) => (
-              <ProductForm
-                product={product}
-                selectedVariant={selectedVariant}
-                variants={data?.product?.variants.nodes || []}
-                checkoutDomain={checkoutDomain}
-              />
-            )}
-          </Await>
-        </Suspense>
-      </div>
+      <ProductForm
+        product={product}
+        selectedVariant={selectedVariant}
+        variants={variants}
+      />
 
       {description ? (
         <RichText
@@ -280,187 +245,111 @@ function ProductMain({
           data={description.value}
         />
       ) : null}
-      <h3 className="text-sm font-bold lg:text-base">Technical Description</h3>
       {technicalDescription ? (
-        <RichText
-          className="rich-text text-xs lg:text-base"
-          data={technicalDescription.value}
-        />
+        <>
+          <h3 className="text-sm font-bold lg:text-base">
+            Technical Description
+          </h3>
+
+          <RichText
+            className="rich-text text-xs lg:text-base"
+            data={technicalDescription.value}
+          />
+        </>
       ) : null}
     </div>
   );
 }
 
-// TODO: get back to variants
-
 function ProductForm({
   product,
   selectedVariant,
   variants,
-  checkoutDomain,
 }: {
   product: ProductFragment;
-  selectedVariant: ProductFragment["selectedVariant"];
+  selectedVariant: NonNullable<ProductFragment["selectedVariant"]>;
   variants: Array<ProductVariantFragment>;
-  checkoutDomain: string;
 }) {
-  const { open } = useAside();
-  const { publish, shop, cart, prevCart } = useAnalytics();
-  const isAvailable = !!selectedVariant?.availableForSale;
-  const [searchParams] = useSearchParams();
-  const { options } = product;
-  let addToCartText = "Add to cart";
-
-  // If the product has options (like size, color, etc), check whether each option has been selected
-  // if (variants.length > 1) {
-  //   for (const option of options) {
-  //     const selectedOption = searchParams.get(option.name);
-  //     if (!selectedOption) {
-  //       addToCartText = `Select a ${option.name.toLowerCase()}`;
-  //       break;
-  //     }
-  //   }
-  // }
+  let { publish, shop, cart, prevCart } = useAnalytics();
+  let isAvailable = !!selectedVariant?.availableForSale;
 
   return (
-    <>
-      {/* <VariantSelector
-        handle={product.handle}
-        options={product.options.filter(
-          (option) => option.optionValues.length > 1,
-        )}
-        variants={variants}
-      >
-        {({ option }) => <ProductOptions key={option.name} option={option} />}
-      </VariantSelector> */}
-      <div className="flex flex-col gap-2 md:gap-3">
+    <div className="flex flex-col gap-[18px] md:gap-8">
+      <div className="flex flex-col gap-2 md:gap-3 lg:flex-row">
+        <VariantSelector
+          handle={product.handle}
+          options={product.options}
+          variants={variants}
+        >
+          {({ option }) => <ProductOptions key={option.name} option={option} />}
+        </VariantSelector>
         <AddToCartButton
           disabled={!selectedVariant || !isAvailable}
-          // onClick={() => {
-          //   open("cart");
-          //   publish("cart_viewed", {
-          //     cart,
-          //     prevCart,
-          //     shop,
-          //     url: window.location.href || "",
-          //   } as CartViewPayload);
-          // }}
           lines={
             selectedVariant
               ? [
                   {
                     merchandiseId: selectedVariant.id,
                     quantity: 1,
-                    // Add entire product to selected variant so we can determine gradient colors in an optimistic cart
                     selectedVariant: { ...selectedVariant, product },
                   },
                 ]
               : []
           }
+          // This handles overriding the animation on larger screens if there's
+          // not a variant selector
+          className={clsx({ "lg:flex-1": product.options.length === 0 })}
         >
-          {product.availableForSale ? addToCartText : "Sold out"}
+          {isAvailable ? "Add to cart" : "Sold out"}
         </AddToCartButton>
-
-        {/* {isAvailable ? (
-          <ShopPayButton
-            selectedVariant={selectedVariant}
-            checkoutDomain={checkoutDomain}
-          />
-        ) : null} */}
       </div>
-    </>
-  );
-}
-
-// ShopPayButton -- if reused pull out into a component
-export function ShopPayButton({
-  selectedVariant,
-  checkoutDomain,
-}: {
-  selectedVariant: ProductFragment["selectedVariant"];
-  checkoutDomain: string;
-}) {
-  return (
-    <Link
-      to={`https://${checkoutDomain}/cart/${selectedVariant?.id.split("ProductVariant/")[1]}:1?payment=shop_pay&channel=hydrogen`}
-    >
-      <Button
-        className="bg-shop-pay flex justify-center py-6 [--yamaha-shadow-color:var(--color-shop-pay)]"
-        intent="primary"
-        size="lg"
-      >
-        <Icon name="shop-pay" className="h-6 w-auto max-w-full" />
-      </Button>
-    </Link>
+    </div>
   );
 }
 
 function ProductOptions({ option }: { option: VariantOption }) {
-  const [searchParams] = useSearchParams();
-  const selectedOption = searchParams.get(option.name);
+  let [searchParams] = useSearchParams();
+  let selectedOption = searchParams.get(option.name);
 
-  // Size (XS, S, M, L, etc) should render buttons
-  if (option.name.toLowerCase() === "size") {
-    return (
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(--spacing(12),1fr))] gap-2 lg:gap-4">
-        {option.values.map(({ value, isAvailable, isActive, to }) => (
-          <Button
-            asChild
-            key={option.name + value}
-            size="sm"
-            type="submit"
-            intent={isActive ? "primary" : "secondary"}
-            disabled={!isAvailable}
-            className="px-0 text-center"
-          >
-            {isAvailable ? (
-              <Link prefetch="intent" preventScrollReset replace to={to}>
-                {value}
-              </Link>
-            ) : (
-              <span>{value}</span>
-            )}
-          </Button>
-        ))}
-      </div>
-    );
-  }
-
-  // All other options should render a dropdown
   return (
-    <div>
+    <div className="relative w-full lg:flex-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <ButtonWithWellText
-            size="icon"
-            wellPrefix={selectedOption ? selectedOption : `${option.name}`}
-          >
-            <Icon name="chevron-down" />
-          </ButtonWithWellText>
+          <button className="flex w-full items-center justify-between rounded-[54px] border-[3px] border-white px-6 py-4 text-xl font-semibold data-[state=open]:[&_svg]:-rotate-180">
+            <span>{selectedOption || option.name}</span>
+            <Icon
+              name="chevron-down"
+              className="ml-2 size-6 transition-transform duration-200 ease-in"
+            />
+          </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-fit md:w-[280px]">
+        <DropdownMenuContent
+          align="center"
+          className="w-[var(--radix-dropdown-menu-trigger-width)] rounded-4xl border border-[#222222] bg-[#111111]"
+          sideOffset={10}
+        >
           {option.values.map(({ value, isAvailable, isActive, to }) => (
             <DropdownMenuItem
-              asChild
-              className="justify-between"
               key={option.name + value}
+              asChild
+              // disabled={!isAvailable}
+              className="rounded-4xl px-5 py-4 text-lg text-white data-[highlighted]:bg-white/5 data-[highlighted]:text-white"
             >
-              {isAvailable ? (
-                <Link
-                  prefetch="intent"
-                  preventScrollReset
-                  replace
-                  to={to}
-                  className="cursor-pointer no-underline"
-                >
-                  {value}
-                  {isActive ? <Icon name="check" /> : null}
-                </Link>
-              ) : (
-                <span className="cursor-not-allowed opacity-35">
-                  {value} (Sold Out)
-                </span>
-              )}
+              <Link
+                prefetch="intent"
+                preventScrollReset
+                replace
+                to={to}
+                className={cn(
+                  "flex w-full items-center justify-between text-xl hover:text-white",
+                  // isActive && "text-white",
+                  // !isActive && "text-white/80",
+                  !isAvailable && "text-white/30",
+                )}
+              >
+                {value}
+                {isActive && <Icon name="check" className="size-5" />}
+              </Link>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
@@ -469,42 +358,107 @@ function ProductOptions({ option }: { option: VariantOption }) {
   );
 }
 
+let addToCartButtonVariants = cva(
+  [
+    "relative flex min-h-16 items-center justify-center overflow-hidden rounded-[54px] px-6 py-4 text-xl font-semibold whitespace-nowrap duration-300",
+    "lg:min-w-20 lg:transition-[flex]",
+  ],
+  {
+    variants: {
+      pending: {
+        false: "bg-white text-black lg:flex-1",
+        true: "bg-[#6EDE49] text-white lg:flex-0",
+      },
+      disabled: {
+        false: "transition-color duration-300 lg:min-w-20 lg:transition-[flex]",
+        true: "bg-white/20 text-white/80",
+      },
+    },
+    defaultVariants: {
+      pending: false,
+      disabled: false,
+    },
+  },
+);
+
+type AddToCartButtonProps = {
+  analytics?: unknown;
+  children: React.ReactNode;
+  disabled?: boolean;
+  lines: Array<OptimisticCartLineInput>;
+  onClick?: () => void;
+  className?: string;
+};
+
 function AddToCartButton({
   analytics,
   children,
   disabled,
   lines,
   onClick,
-}: {
-  analytics?: unknown;
-  children: React.ReactNode;
-  disabled?: boolean;
-  lines: Array<OptimisticCartLineInput>;
-  onClick?: () => void;
-}) {
+  className,
+}: AddToCartButtonProps) {
+  let fetcher = useFetcher();
+  let [pending, setPending] = useState(false);
+  let loadStartTime = useRef<number | null>(null);
+
+  let fetcherPending = fetcher.state !== "idle";
+
+  // Delays the resolving of the pending state to be a min of 2 seconds
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    if (fetcherPending) {
+      // Start loading - record the start time
+      loadStartTime.current = Date.now();
+      setPending(true);
+    } else if (loadStartTime.current !== null) {
+      // Finished loading - calculate how long to wait
+      let elapsedTime = Date.now() - loadStartTime.current;
+      let remainingTime = Math.max(2000 - elapsedTime, 0);
+
+      // Clear any existing timeout
+      if (timeoutId) clearTimeout(timeoutId);
+
+      // Set timeout for remaining time (if any)
+      timeoutId = setTimeout(() => {
+        setPending(false);
+        loadStartTime.current = null;
+      }, remainingTime);
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [fetcherPending]);
+
   return (
-    <CartForm
-      route="/cart"
-      inputs={{ lines }}
-      action={CartForm.ACTIONS.LinesAdd}
+    <fetcher.Form
+      method="post"
+      action="/cart"
+      className={cn(addToCartButtonVariants({ pending, disabled }), className)}
     >
-      {(fetcher: FetcherWithComponents<any>) => (
-        <>
-          <input
-            name="analytics"
-            type="hidden"
-            value={JSON.stringify(analytics)}
-          />
-          <button
-            type="submit"
-            onClick={onClick}
-            disabled={disabled ?? fetcher.state !== "idle"}
-            className="hover:bg-blue-brand transition-color h-12 w-full rounded-[54px] bg-white px-5 py-2 text-center text-base font-semibold text-black duration-300 ease-in-out hover:text-white disabled:cursor-not-allowed disabled:opacity-50 md:h-16 md:gap-2.5 md:px-6 md:py-4 md:text-xl"
-          >
-            {children}
-          </button>
-        </>
-      )}
-    </CartForm>
+      <input
+        type="hidden"
+        name={CartForm.INPUT_NAME}
+        value={JSON.stringify({
+          action: CartForm.ACTIONS.LinesAdd,
+          inputs: { lines },
+        })}
+      />
+      <input name="analytics" type="hidden" value={JSON.stringify(analytics)} />
+      <button
+        className="not-disabled:cursor-pointer"
+        type="submit"
+        onClick={onClick}
+        disabled={disabled ?? pending}
+      >
+        <span className="absolute inset-0" />
+        {pending ? (
+          <Icon name="check" className="add-to-cart-icon size-8" />
+        ) : (
+          children
+        )}
+      </button>
+    </fetcher.Form>
   );
 }
