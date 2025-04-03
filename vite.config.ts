@@ -20,6 +20,7 @@ export default defineConfig({
     iconsSpritesheet({
       inputDir: "app/assets/icons",
       outputDir: "public",
+
       typesOutputFile: "app/components/icon/types.generated.ts",
       withTypes: true,
       iconNameTransformer: (name) =>
