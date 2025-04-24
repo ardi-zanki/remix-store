@@ -1,30 +1,30 @@
-import { useEffect, useRef, useState } from "react";
 import type { NavLinkProps } from "@remix-run/react";
 import { Link, NavLink } from "@remix-run/react";
-import { type CartViewPayload, useAnalytics } from "@shopify/hydrogen";
+import {
+  type CartViewPayload,
+  CartForm,
+  Money,
+  useAnalytics,
+  useOptimisticCart,
+} from "@shopify/hydrogen";
 import type {
   HeaderQuery,
   CartApiQueryFragment,
 } from "storefrontapi.generated";
-import { ThemeToggle } from "~/components/theme-toggle";
 import { Icon } from "~/components/icon";
-import { Button, ButtonWithWellText } from "~/components/ui/button";
 import { useRelativeUrl } from "~/lib/use-relative-url";
 import { useHydrated } from "~/lib/hooks";
-import {
-  Aside,
-  AsideBody,
-  AsideContent,
-  AsideDescription,
-  AsideHeader,
-  AsideTitle,
-  AsideTrigger,
-  useAside,
-} from "~/components/ui/aside";
-import { CartMain } from "~/components/cart";
-import { clsx } from "clsx";
+import { cn } from "~/lib/cn";
 import { AnimatedLink } from "~/components/ui/animated-link";
 import { RemixLogo } from "~/components/remix-logo";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  PopoverClose,
+} from "~/components/ui/popover";
+import { clsx } from "clsx";
 
 interface HeaderProps {
   menu: NonNullable<HeaderQuery["menu"]>;
@@ -51,60 +51,239 @@ export function Header({ menu, cart }: HeaderProps) {
         </ul>
       </nav>
 
-      <CartLink cart={cart} />
+      <div className="flex justify-end">
+        <CartButton cart={cart} />
+      </div>
     </header>
   );
 }
 
-function CartLink({ cart }: Pick<HeaderProps, "cart">) {
+function CartButton({ cart: originalCart }: Pick<HeaderProps, "cart">) {
+  let cart = useOptimisticCart(originalCart);
   let totalQuantity = cart?.totalQuantity || 0;
+  let { publish, shop } = useAnalytics();
+
+  if (!cart || totalQuantity === 0) {
+    return (
+      <AnimatedLink
+        to="/collections/all"
+        iconName="cart"
+        animationType="text"
+        expandedText="All"
+      >
+        Shop
+      </AnimatedLink>
+    );
+  }
+
+  let lines = cart.lines.nodes;
+  let subtotalAmount = cart.cost?.subtotalAmount;
+  let checkoutUrl = cart.checkoutUrl;
 
   return (
-    <div className="flex justify-end">
-      {totalQuantity > 0 ? (
-        <AnimatedLink
-          to="cart"
-          iconName="cart"
-          animationType="text"
-          expandedText={`Item${totalQuantity > 1 ? "s" : ""}`}
-          className="bg-blue-brand text-white"
+    <>
+      <div className="block md:hidden">
+        <CartCTA isLink quantity={totalQuantity} />
+      </div>
+      <Popover>
+        <PopoverTrigger asChild className="group">
+          <div
+            // div makes trigger work (dumb) and controls hiding for mobile
+            className="hidden md:block"
+          >
+            <CartCTA quantity={totalQuantity} />
+          </div>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          className="bg-blue-brand max-h-[80vh] max-w-min min-w-[380px] overflow-y-auto rounded-t-4xl rounded-b-[2.625rem] text-white"
         >
-          {totalQuantity}
-          <span className="sr-only">in cart</span>
-        </AnimatedLink>
-      ) : (
-        <AnimatedLink
-          to="/collections/all"
-          iconName="cart"
-          animationType="text"
-          expandedText="All"
-          className={clsx({ "bg-blue-brand text-white": totalQuantity > 0 })}
-        >
-          Shop
-        </AnimatedLink>
-      )}
-    </div>
+          <div className="flex items-center justify-between px-5 py-3">
+            <h2 className="font-title tracking-tightest text-base font-black uppercase">
+              {totalQuantity} item(s) in cart
+            </h2>
+            <PopoverClose asChild>
+              <button
+                type="button"
+                aria-label="Close cart"
+                className="rounded-full p-1 text-white hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
+              >
+                <Icon name="x" className="size-8" />
+              </button>
+            </PopoverClose>
+          </div>
+          <div className="flex flex-col gap-4 px-5 pt-4 pb-44">
+            {lines.map((line) => {
+              let { id, quantity, isOptimistic, cost } = line;
+
+              let { image, title, product, price } = line.merchandise;
+
+              // TODO: we need to revisit this logic with discounted items
+              // it probably won't be quite the right experience
+              let totalAmount =
+                !cost && isOptimistic
+                  ? // For new, pending item, just use the price
+                    price
+                  : cart.isOptimistic
+                    ? // If the cart is pending, calculate an amount
+                      {
+                        ...price,
+                        amount: String(
+                          Number(cost.amountPerQuantity.amount) * quantity,
+                        ),
+                      }
+                    : // otherwise, use the the actual cost
+                      cost.totalAmount;
+
+              return (
+                <div key={id} className="flex items-start gap-3">
+                  <Link
+                    to={`/products/${product.handle}`}
+                    onClick={(e) => {
+                      // Is this hacky?
+                      const event = new KeyboardEvent("keydown", {
+                        key: "Escape",
+                        code: "Escape",
+                        keyCode: 27,
+                        bubbles: true,
+                        cancelable: true,
+                      });
+                      e.currentTarget.dispatchEvent(event);
+                    }}
+                    className="size-20 shrink-0 rounded-2xl bg-white p-2"
+                  >
+                    {image && (
+                      <img
+                        src={image.url}
+                        alt={image.altText || ""}
+                        className="h-full w-full object-contain"
+                      />
+                    )}
+                  </Link>
+                  <div className="flex flex-1 flex-col gap-1 text-sm">
+                    <h3 className="font-bold tracking-tight">
+                      {product.title}
+                    </h3>
+                    <p>{title !== "Default Title" && title}</p>
+                    <CartQuantityControls
+                      lineId={id}
+                      quantity={quantity}
+                      productTitle={product.title}
+                    />
+                  </div>
+
+                  <Money className="text-sm font-bold" data={totalAmount} />
+                </div>
+              );
+            })}
+          </div>
+          <div className="bg-blue-brand absolute bottom-0 flex w-full flex-col items-start gap-3 rounded-b-[2.625rem] p-4">
+            <div className="flex w-full items-center justify-between">
+              <p className="font-title tracking-tightest text-base font-black uppercase">
+                subtotal
+              </p>
+
+              {subtotalAmount ? (
+                <Money
+                  className={clsx(
+                    "text-sm",
+                    cart.isOptimistic && "text-white/50",
+                  )}
+                  data={subtotalAmount}
+                />
+              ) : null}
+            </div>
+            <p className="text-center text-xs text-white/50">
+              Taxes & Shipping calculated at checkout
+            </p>
+            <CheckoutLink
+              to={checkoutUrl ?? ""}
+              disabled={cart.isOptimistic || !checkoutUrl}
+            />
+          </div>
+        </PopoverContent>
+      </Popover>
+    </>
   );
 }
 
-type HeaderMenuProps = Pick<HeaderProps, "menu">;
+/**
+ * The call-to-action button for the cart that shows the current quantity of items.
+ * On hover/focus, it reveals additional text indicating "Item(s)" after the quantity.
+ *
+ * Note: This component has some hacky behavior to handle mobile vs desktop cases:
+ * - On mobile: It's always a button (used within Popover)
+ * - On desktop: It's a Link before hydration, then becomes a button after
+ *
+ * This dual behavior exists because:
+ * 1. Mobile needs a direct link to the cart page
+ * 2. Desktop needs to trigger the popover but a link for non-JS fallback
+ *
+ * @param props.isLink - Whether this should behave as a link (mobile) or button (desktop)
+ * @param props.quantity - The number of items in the cart
+ */
+function CartCTA({
+  isLink = false,
+  quantity,
+}: {
+  isLink?: boolean;
+  quantity: number;
+}) {
+  let { publish, shop, cart, prevCart } = useAnalytics();
+  let isHydrated = useHydrated();
 
-function HeaderMenu({ menu }: HeaderMenuProps) {
-  return (
+  let className =
+    "group bg-blue-brand relative flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[54px] px-5 py-2 pr-4 pl-5 text-center text-base font-semibold text-white no-underline md:h-16 md:gap-2.5 md:px-6 md:py-4 md:pr-5 md:pl-6 md:text-xl";
+
+  let inner = (
     <>
-      <div className="flex-1 md:hidden">
-        <HeaderMenuMobileToggle menu={menu} />
-      </div>
-      <nav className="hidden flex-1 md:flex md:gap-3" role="navigation">
-        {menu.items.map((item) => {
-          if (!item.url) return null;
-          return (
-            <HeaderMenuLink key={item.id} title={item.title} url={item.url} />
-          );
-        })}
-        <ThemeToggle display="icon" />
-      </nav>
+      <Icon
+        name="cart"
+        className="size-6 md:size-8"
+        fill="currentColor"
+        aria-hidden="true"
+      />
+      <span className="flex gap-1">
+        <span>{quantity}</span>
+        <span
+          className={cn(
+            "overflow-hidden pr-0 whitespace-nowrap transition-all duration-300 ease-in-out",
+            "max-w-0 group-hover:max-w-[10ch] group-hover:pr-1",
+            "group-data-[state=open]:max-w-[10ch] group-data-[state=open]:pr-1",
+          )}
+        >
+          {`Item${quantity > 1 ? "s" : ""}`}
+          <span className="sr-only">in cart</span>
+        </span>
+      </span>
     </>
+  );
+
+  // Before hydration or on mobile, render as a link for non-JS fallback
+  if (isLink || !isHydrated) {
+    return (
+      <Link to="/cart" className={className}>
+        {inner}
+      </Link>
+    );
+  }
+
+  // After hydration or on desktop, render as a button
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={() => {
+        publish("cart_viewed", {
+          cart,
+          prevCart,
+          shop,
+          url: window.location.href || "",
+        } satisfies CartViewPayload);
+      }}
+    >
+      {inner}
+    </button>
   );
 }
 
@@ -126,121 +305,147 @@ function HeaderMenuLink(props: HeaderMenuLinkProps) {
   );
 }
 
-function HeaderMenuMobileToggle({ menu }: HeaderMenuProps) {
-  // force the drawer closed via a full page navigation
-  function closeAside(event: React.MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault();
-    window.location.href = event.currentTarget.href;
-  }
+function CartQuantityControls({
+  lineId,
+  quantity,
+  productTitle,
+}: {
+  lineId: string;
+  quantity: number;
+  productTitle: string;
+}) {
+  let prevQuantity = quantity - 1;
+
+  let buttonClassName =
+    "flex items-center justify-center rounded-full text-white/50 transition-colors duration-150 ease-in-out hover:text-white  focus-visible:text-white focus-visible:ring-1 focus-visible:ring-white/50  focus-visible:outline-none";
 
   return (
-    <Aside>
-      <AsideTrigger asChild>
-        <Button size="icon" className="md:hidden">
-          <Icon name="menu" aria-label="navigation menu" />
-        </Button>
-      </AsideTrigger>
-      <AsideContent side="left">
-        <AsideHeader>
-          <AsideTitle>Menu</AsideTitle>
-        </AsideHeader>
-        <AsideDescription className="sr-only">navigation menu</AsideDescription>
-        <AsideBody>
-          <nav className="flex h-full w-full flex-col gap-4">
-            {menu.items.map((item) => {
-              if (!item.url) return null;
-              return (
-                <HeaderMenuMobileLink
-                  key={item.id}
-                  title={item.title}
-                  url={item.url}
-                  onClick={closeAside}
-                />
-              );
-            })}
-            <ThemeToggle display="button" />
-          </nav>
-        </AsideBody>
-      </AsideContent>
-    </Aside>
-  );
-}
-
-function HeaderMenuMobileLink(props: HeaderMenuLinkProps) {
-  const { url } = useRelativeUrl(props.url);
-
-  return (
-    <Button size="lg" asChild className="text-left">
-      <NavLink to={url} onClick={props.onClick}>
-        {props.title}
-      </NavLink>
-    </Button>
-  );
-}
-
-function HeaderCartActions({ cart }: Pick<HeaderProps, "cart">) {
-  // needs to be a controlled component so we can trigger it from add to cart buttons
-  const aside = useAside();
-
-  const count = cart?.totalQuantity || 0;
-
-  return (
-    <div className="flex flex-1 gap-3" role="navigation">
-      <div className="ml-auto hidden md:block md:w-[150px]">
-        {/* TODO: make interactive */}
-        <ButtonWithWellText size="icon" wellPrefix="🇺🇸 USD">
-          <Icon name="globe" aria-label="change currency" />
-        </ButtonWithWellText>
-      </div>
-      <div className="ml-auto flex md:ml-0">
-        <Aside
-          open={aside.type === "cart"}
-          onOpenChange={(open) => aside.open(open ? "cart" : "none")}
+    <div
+      className="flex items-center gap-2.5"
+      role="group"
+      aria-label={`Quantity controls for ${productTitle}`}
+    >
+      {quantity === 1 ? (
+        <CartLineRemoveButton lineIds={[lineId]}>
+          <button
+            type="submit"
+            className={buttonClassName}
+            aria-label={`Remove ${productTitle} from cart`}
+          >
+            <Icon name="circle-minus" className="size-5" />
+          </button>
+        </CartLineRemoveButton>
+      ) : (
+        <CartLineUpdateButton lines={[{ id: lineId, quantity: prevQuantity }]}>
+          <button
+            className={buttonClassName}
+            type="submit"
+            value={prevQuantity}
+            name="decrease-quantity"
+            aria-label={`Decrease ${productTitle} quantity by 1`}
+          >
+            <Icon name="circle-minus" className="size-5" />
+          </button>
+        </CartLineUpdateButton>
+      )}
+      <span
+        className="text-center"
+        aria-label={`Current quantity: ${quantity}`}
+      >
+        {quantity}
+      </span>
+      <CartLineUpdateButton lines={[{ id: lineId, quantity: quantity + 1 }]}>
+        <button
+          className={buttonClassName}
+          type="submit"
+          value={quantity + 1}
+          name="increase-quantity"
+          aria-label={`Increase ${productTitle} quantity by 1`}
         >
-          <AsideTrigger>
-            <CartBadge count={count} />
-          </AsideTrigger>
-          <AsideContent>
-            <AsideHeader>
-              <AsideTitle>Your Cart</AsideTitle>
-            </AsideHeader>
-            <AsideBody>
-              <CartMain cart={cart!} layout="aside" />
-            </AsideBody>
-          </AsideContent>
-        </Aside>
-      </div>
+          <Icon name="circle-plus" className="size-5" />
+        </button>
+      </CartLineUpdateButton>
     </div>
   );
 }
 
-function CartBadge({ count }: { count: number }) {
-  const { publish, shop, cart, prevCart } = useAnalytics();
-  const isHydrated = useHydrated();
-
-  const inner = (
-    <div className="flex gap-2">
-      <Icon name="bag" className="text-inherit" aria-label="cart" /> {count}
-    </div>
-  );
-
+function CartLineUpdateButton({
+  children,
+  lines,
+}: {
+  children: React.ReactNode;
+  lines: { id: string; quantity: number }[];
+}) {
   return (
-    <Button
-      asChild
-      intent={count > 0 ? "primary" : "secondary"}
-      onClick={() => {
-        publish("cart_viewed", {
-          cart,
-          prevCart,
-          shop,
-          url: window.location.href || "",
-        } as CartViewPayload);
+    <CartForm
+      route="/cart"
+      action={CartForm.ACTIONS.LinesUpdate}
+      inputs={{ lines }}
+    >
+      {children}
+    </CartForm>
+  );
+}
+
+function CartLineRemoveButton({
+  children,
+  lineIds,
+}: {
+  children: React.ReactNode;
+  lineIds: string[];
+}) {
+  return (
+    <CartForm
+      route="/cart"
+      action={CartForm.ACTIONS.LinesRemove}
+      inputs={{ lineIds }}
+    >
+      {children}
+    </CartForm>
+  );
+}
+
+function CheckoutLink({
+  to,
+  disabled = false,
+}: {
+  to: string;
+  disabled?: boolean;
+}) {
+  return (
+    <a
+      href={to}
+      className={clsx(
+        "group flex w-full items-center justify-center rounded-[54px] bg-white px-6 py-4 text-xl font-semibold text-black no-underline outline-none ring-inset",
+        disabled
+          ? "cursor-not-allowed bg-white/70 text-black/60"
+          : "hover:bg-blue-brand focus-visible:bg-blue-brand transition-colors duration-300 hover:text-white hover:ring hover:ring-white focus-visible:text-white focus-visible:ring focus-visible:ring-white",
+      )}
+      aria-disabled={disabled}
+      onClick={(e) => {
+        e.preventDefault();
       }}
     >
-      {
-        // clicking the button before hydration will navigate to the cart page
-        !isHydrated ? <a href="/cart">{inner}</a> : inner
-      }
-    </Button>
+      <div
+        className={clsx(
+          "flex h-8 w-0 min-w-fit items-center justify-between gap-2.5 transition-[width] duration-300 ease-in-out",
+          !disabled && "group-hover:w-full group-focus-visible:w-full",
+        )}
+      >
+        {disabled ? (
+          <span>Updating cart...</span>
+        ) : (
+          <>
+            <span>Check out</span>
+            <Icon
+              name="fast-forward"
+              className="size-8"
+              fill="currentColor"
+              aria-hidden="true"
+            />
+          </>
+        )}
+      </div>
+    </a>
   );
 }
