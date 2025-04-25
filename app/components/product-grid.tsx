@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import type { ProductImageFragment } from "storefrontapi.generated";
 import type { CollectionProductData } from "~/lib/data/collection.server";
+import type { MoneyV2 } from "@shopify/hydrogen/storefront-api-types";
 
 let defaultLoadingProductCount = 12;
 
@@ -86,9 +87,7 @@ function ProductGridItem({ product }: ProductGridItemProps) {
           <span className="absolute inset-0" />
           {title}
         </Link>
-        <div className="font-normal">
-          <Money className="text-white" data={price} withoutTrailingZeros />
-        </div>
+        <ProductPrice price={price} />
       </div>
     </ProductGridItemLayout>
   );
@@ -132,6 +131,52 @@ function ProductImages({ images }: ProductImagesProps) {
       )}
     </ImageLayout>
   );
+}
+
+export type ProductPriceProps = {
+  price: MoneyV2 | null;
+  compareAtPrice?: MoneyV2 | null;
+  /**
+   * Where the product is being used -- a bit hacky unfortunately
+   * @default "product"
+   */
+  layout?: "cart" | "product";
+};
+
+export function ProductPrice({
+  price,
+  compareAtPrice,
+  layout = "product",
+}: ProductPriceProps) {
+  if (!price) return null;
+
+  let priceAmount = Number(price.amount || 0);
+  let compareAtPriceAmount = Number(compareAtPrice?.amount || 0);
+
+  if (compareAtPrice && priceAmount < compareAtPriceAmount) {
+    return (
+      <div className="flex w-max flex-col items-end">
+        <s
+          className={clsx(
+            "line-through",
+            layout === "cart" && "text-white/50",
+            layout === "product" && "text-white",
+          )}
+        >
+          <Money data={compareAtPrice} />
+        </s>
+        <Money
+          className={clsx(
+            layout === "cart" && "text-white",
+            layout === "product" && "text-red-brand font-bold",
+          )}
+          data={price}
+        />
+      </div>
+    );
+  }
+
+  return <Money className="text-white" data={price} />;
 }
 
 type LayoutProps = {
