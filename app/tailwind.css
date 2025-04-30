@@ -313,4 +313,8 @@
   & p {
     @apply mt-6 text-sm lg:text-base;
   }
+
+  & a {
+    @apply text-blue-brand hover:underline;
+  }
 }
