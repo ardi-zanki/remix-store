@@ -16,7 +16,7 @@ export async function getLookbookEntries(
   storefront: Storefront,
 ): Promise<LookbookEntry[]> {
   let { lookbookEntries, errors } = await storefront.query(LOOKBOOK_QUERY, {
-    cache: storefront.CacheLong(),
+    // cache: storefront.CacheLong(),
   });
 
   if (errors) {
