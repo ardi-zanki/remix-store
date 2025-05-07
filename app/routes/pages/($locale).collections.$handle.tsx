@@ -73,6 +73,7 @@ export default function Collection() {
       <PageTitle>{collection.title}</PageTitle>
 
       <ProductGrid
+        key={collection.handle}
         products={collection.products}
         loadMoreProducts={{
           numberOfProducts: 8,
