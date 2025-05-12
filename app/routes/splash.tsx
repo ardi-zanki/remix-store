@@ -31,7 +31,7 @@ export default function Splash() {
         className="w-full max-w-[550px] object-cover"
       />
       <h1 className="font-mono text-base text-white uppercase">
-        Available May 19th
+        Available May 19
       </h1>
     </main>
   );
