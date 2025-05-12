@@ -1,5 +1,6 @@
 import { useRouteLoaderData } from "@remix-run/react";
 import type { loader as rootLoader } from "~/root";
+import { isMagicHidden } from "./show-the-magic";
 
 /**
  * Strips the domain for internal URLs
@@ -7,7 +8,7 @@ import type { loader as rootLoader } from "~/root";
 export function useRelativeUrl(ogUrl: string) {
   const rootData = useRouteLoaderData<typeof rootLoader>("root");
 
-  if (!rootData) {
+  if (!rootData || isMagicHidden(rootData)) {
     throw new Error("Failed to find data for root loader");
   }
 

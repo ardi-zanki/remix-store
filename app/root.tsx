@@ -38,7 +38,7 @@ import lexendZettaBlackUrl from "/font/lexend-zetta-black.woff2?url";
 
 import "./tailwind.css";
 import { MatrixText } from "./components/matrix-text";
-import { showAllTheMagic } from "./lib/show-the-magic";
+import { isMagicHidden, getShowAllTheMagic } from "./lib/show-the-magic";
 import { Splash } from "./components/splash";
 
 export type RootLoader = typeof loader;
@@ -108,13 +108,16 @@ export function links() {
 }
 
 export async function loader(args: LoaderFunctionArgs) {
+  let requestUrl = new URL(args.request.url);
+  let siteUrl = requestUrl.protocol + "//" + requestUrl.host;
+
   // PRE-LAUNCH CHECK -- don't load any data and redirect to home if not there
-  if (!showAllTheMagic(args.context)) {
-    const url = new URL(args.request.url);
+  if (!getShowAllTheMagic(args.context)) {
+    let url = new URL(args.request.url);
     if (url.pathname !== "/") {
       return redirect("/");
     }
-    return { hideTheMagic: true };
+    return { hideTheMagic: true, siteUrl };
   }
 
   // Start fetching non-critical data without blocking time to first byte
@@ -124,9 +127,6 @@ export async function loader(args: LoaderFunctionArgs) {
   const criticalData = await loadCriticalData(args);
 
   const { storefront, env } = args.context;
-
-  let requestUrl = new URL(args.request.url);
-  let siteUrl = requestUrl.protocol + "//" + requestUrl.host;
 
   return data(
     {
@@ -211,7 +211,7 @@ export function Layout({ children }: { children?: React.ReactNode }) {
 
       {
         // PRE-LAUNCH CHECK -- conditional render of all the extra stuff
-        data && "hideTheMagic" in data && data.hideTheMagic ? (
+        isMagicHidden(data) ? (
           <Splash />
         ) : (
           <body className="min-h-dvh overflow-x-hidden bg-black antialiased">
@@ -246,15 +246,6 @@ export default function App() {
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data, error }) => {
-  // PRE-LAUNCH CHECK -- don't index and add simple meta tags if not there
-  if (data && "hideTheMagic" in data && data.hideTheMagic) {
-    return [
-      { title: "Remix" },
-      { description: "Soft wear for engineers of all kinds" },
-      { name: "robots", content: "noindex" },
-    ];
-  }
-
   const title =
     isRouteErrorResponse(error) && error.status === 404
       ? "Not Found"

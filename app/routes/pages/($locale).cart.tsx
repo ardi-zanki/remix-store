@@ -10,10 +10,14 @@ import { clsx } from "clsx";
 import { MatrixText } from "~/components/matrix-text";
 import { AnimatedLinkSpread } from "~/components/ui/animated-link";
 import { Icon } from "~/components/icon";
+import { isMagicHidden } from "~/lib/show-the-magic";
 
 export function meta({ matches }: MetaArgs<undefined, { root: RootLoader }>) {
-  const { siteUrl, cart } = matches[0].data;
-
+  const rootData = matches[0].data;
+  if (isMagicHidden(rootData)) {
+    return [];
+  }
+  const { siteUrl, cart } = rootData;
   return generateMeta({
     title: cart?.totalQuantity ? `Cart (${cart?.totalQuantity})` : "Cart",
     description: "View your shopping cart and checkout",
@@ -97,6 +101,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 export default function Cart() {
   const rootData = useRouteLoaderData<RootLoader>("root");
+  if (isMagicHidden(rootData)) throw new Error("Get out of here");
   let cart = useOptimisticCart(rootData?.cart);
 
   // Note -- this empty cart state is the same as the root ErrorBoundary -- if we propagate it again it's probably a good time to turn it into a component

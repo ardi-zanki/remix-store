@@ -18,12 +18,22 @@ import { AnimatedLink } from "~/components/ui/animated-link";
 import { generateMeta } from "~/lib/meta";
 import type { RootLoader } from "~/root";
 import { ProductGrid } from "~/components/product-grid";
+import { isMagicHidden } from "~/lib/show-the-magic";
 
 export let FEATURED_COLLECTION_HANDLE = "remix-logo-apparel";
 
 export function meta({
   matches,
 }: MetaArgs<typeof loader, { root: RootLoader }>) {
+  // PRE-LAUNCH CHECK -- don't index and add simple meta tags if not there
+  if (isMagicHidden(matches[0].data)) {
+    return [
+      { title: "The Remix Store" },
+      { description: "Soft wear for engineers of all kinds" },
+      { name: "robots", content: "noindex" },
+    ];
+  }
+
   const { siteUrl } = matches[0].data;
   return generateMeta({
     title: "The Remix Store | Home",
