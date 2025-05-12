@@ -1,6 +1,9 @@
+// All PRE-LAUNCH CHECK comments indicate code that should be removed once we launch
+
 import { useNonce, getShopAnalytics, Analytics } from "@shopify/hydrogen";
 import {
   data,
+  redirect,
   type LoaderFunctionArgs,
   type MetaFunction,
 } from "@shopify/remix-oxygen";
@@ -35,7 +38,8 @@ import lexendZettaBlackUrl from "/font/lexend-zetta-black.woff2?url";
 
 import "./tailwind.css";
 import { MatrixText } from "./components/matrix-text";
-import { isProduction } from "./lib/is-production.server";
+import { showAllTheMagic } from "./lib/show-the-magic";
+import { Splash } from "./components/splash";
 
 export type RootLoader = typeof loader;
 
@@ -104,9 +108,13 @@ export function links() {
 }
 
 export async function loader(args: LoaderFunctionArgs) {
-  // PRE-LAUNCH CHECK -- don't load any data
-  if (isProduction) {
-    return { isProduction: true };
+  // PRE-LAUNCH CHECK -- don't load any data and redirect to home if not there
+  if (!showAllTheMagic(args.context)) {
+    const url = new URL(args.request.url);
+    if (url.pathname !== "/") {
+      return redirect("/");
+    }
+    return { hideTheMagic: true };
   }
 
   // Start fetching non-critical data without blocking time to first byte
@@ -203,12 +211,10 @@ export function Layout({ children }: { children?: React.ReactNode }) {
 
       {
         // PRE-LAUNCH CHECK -- conditional render of all the extra stuff
-        data && "isProduction" in data && data.isProduction ? (
-          <body className="min-h-screen overflow-x-hidden bg-[#0A101A] antialiased">
-            {children}
-          </body>
+        data && "hideTheMagic" in data && data.hideTheMagic ? (
+          <Splash />
         ) : (
-          <body className="min-h-screen overflow-x-hidden bg-black antialiased">
+          <body className="min-h-dvh overflow-x-hidden bg-black antialiased">
             {data && "cart" in data ? (
               <Analytics.Provider
                 cart={data.cart}
@@ -239,7 +245,16 @@ export default function App() {
   return <Outlet />;
 }
 
-export const meta: MetaFunction = ({ error }) => {
+export const meta: MetaFunction<typeof loader> = ({ data, error }) => {
+  // PRE-LAUNCH CHECK -- don't index and add simple meta tags if not there
+  if (data && "hideTheMagic" in data && data.hideTheMagic) {
+    return [
+      { title: "Remix" },
+      { description: "Soft wear for engineers of all kinds" },
+      { name: "robots", content: "noindex" },
+    ];
+  }
+
   const title =
     isRouteErrorResponse(error) && error.status === 404
       ? "Not Found"
@@ -258,6 +273,18 @@ export function ErrorBoundary() {
   } else if (error instanceof Error) {
     errorMessage = error.message;
   }
+
+  // PRE-LAUNCH CHECK -- temporary error page
+  return (
+    <main className="flex h-screen w-full flex-col items-center justify-center gap-1 bg-[#0A101A]">
+      <h1 className="font-mono text-base text-white uppercase">
+        {errorStatus}
+      </h1>
+      <p className="font-mono text-sm text-white uppercase">
+        {errorStatus === 404 ? "Not Found" : "An unexpected error occurred"}
+      </p>
+    </main>
+  );
 
   return (
     <div className="flex h-screen flex-col items-center justify-center pt-[140px] pb-[140px] md:h-min md:pt-[200px] md:pb-[240]">
