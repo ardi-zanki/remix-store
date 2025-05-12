@@ -7,7 +7,6 @@ const routes = [
     await flatRoutes({ rootDirectory: "routes/pages" }),
   )),
   ...prefix("_resources", [
-    route("color-scheme", "routes/resources/color-scheme.tsx"),
     route("load-more-products", "routes/resources/load-more-products.tsx"),
   ]),
 ] satisfies RouteConfig;

@@ -20,9 +20,7 @@ import {
   Link,
 } from "@remix-run/react";
 import { FOOTER_QUERY, HEADER_QUERY } from "~/lib/fragments";
-import { parseColorScheme } from "~/lib/color-scheme.server";
 import { clsx } from "clsx";
-import { ColorSchemeScript, useColorScheme } from "~/lib/color-scheme";
 import { AnimatedLinkSpread } from "~/components/ui/animated-link";
 import { AsideProvider } from "~/components/ui/aside";
 import { Navbar } from "~/components/navbar";
@@ -154,21 +152,19 @@ export async function loader(args: LoaderFunctionArgs) {
 async function loadCriticalData({ context, request }: LoaderFunctionArgs) {
   const { storefront, cart } = context;
 
-  const [header, colorScheme, cartData] = await Promise.all([
+  const [header, cartData] = await Promise.all([
     storefront.query(HEADER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
         headerMenuHandle: "main-menu",
       },
     }),
-    parseColorScheme(request),
     cart.get(),
   ]);
 
   return {
     cart: cartData,
     header,
-    colorScheme,
   };
 }
 
@@ -193,18 +189,12 @@ function loadDeferredData({ context }: LoaderFunctionArgs) {
 export function Layout({ children }: { children?: React.ReactNode }) {
   const nonce = useNonce();
   const data = useRouteLoaderData<RootLoader>("root");
-  const colorScheme = useColorScheme();
 
   return (
-    <html
-      lang="en"
-      className={clsx({ dark: colorScheme === "dark" })}
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <ColorSchemeScript nonce={nonce} />
         <Meta />
         <Links />
       </head>
