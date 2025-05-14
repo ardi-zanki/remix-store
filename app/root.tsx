@@ -6,7 +6,6 @@ import {
   Meta,
   Outlet,
   Scripts,
-  useRouteError,
   useRouteLoaderData,
   ScrollRestoration,
   isRouteErrorResponse,
@@ -36,6 +35,7 @@ import tailwindCssSrc from "./tailwind.css?url";
 import { MatrixText } from "./components/matrix-text";
 import { isMagicHidden, getShowAllTheMagic } from "./lib/show-the-magic";
 import { Splash } from "./components/splash";
+import type { Route } from "./+types/root";
 
 export type RootLoader = typeof loader;
 
@@ -242,8 +242,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, error }) => {
   return [{ title }];
 };
 
-export function ErrorBoundary() {
-  const error = useRouteError();
+export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   let errorMessage = "Unknown error";
   let errorStatus = 500;
 
@@ -255,16 +254,18 @@ export function ErrorBoundary() {
   }
 
   // PRE-LAUNCH CHECK -- temporary error page
-  return (
-    <main className="flex h-screen w-full flex-col items-center justify-center gap-1 bg-[#0A101A]">
-      <h1 className="font-mono text-base text-white uppercase">
-        {errorStatus}
-      </h1>
-      <p className="font-mono text-sm text-white uppercase">
-        {errorStatus === 404 ? "Not Found" : "An unexpected error occurred"}
-      </p>
-    </main>
-  );
+  if (isMagicHidden(loaderData)) {
+    return (
+      <main className="flex h-screen w-full flex-col items-center justify-center gap-1 bg-[#0A101A]">
+        <h1 className="font-mono text-base text-white uppercase">
+          {errorStatus}
+        </h1>
+        <p className="font-mono text-sm text-white uppercase">
+          {errorStatus === 404 ? "Not Found" : "An unexpected error occurred"}
+        </p>
+      </main>
+    );
+  }
 
   return (
     <div className="flex h-screen flex-col items-center justify-center pt-[140px] pb-[140px] md:h-min md:pt-[200px] md:pb-[240]">
