@@ -149,8 +149,7 @@ function MenuLink({ to, children }: { to: string; children: React.ReactNode }) {
 }
 
 function ProductMain({ product }: { product: ProductFragment }) {
-  let { title, category, technicalDescription } = product;
-  const mainDescription = product.customDescription?.value;
+  let { title, category, technicalDescription, customDescription } = product;
 
   const { productOptions, selectedVariant } = useProductOptions(product);
 
@@ -175,10 +174,10 @@ function ProductMain({ product }: { product: ProductFragment }) {
           selectedVariant={selectedVariant}
         />
 
-        {mainDescription ? (
+        {customDescription ? (
           <RichText
             className="rich-text text-xs lg:text-base"
-            data={mainDescription}
+            data={customDescription.value}
           />
         ) : null}
         {technicalDescription ? (
