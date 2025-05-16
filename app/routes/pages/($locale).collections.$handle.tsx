@@ -9,6 +9,8 @@ import type { RootLoader } from "~/root";
 import { ProductGrid } from "~/components/product-grid";
 import { PageTitle } from "~/components/page-title";
 
+import ogImageSrc from "~/assets/images/social-collections.jpg";
+
 export function meta({
   data,
   matches,
@@ -18,17 +20,10 @@ export function meta({
   const { collection } = data;
   const { siteUrl } = matches[0].data;
 
-  let title = "The Remix Store";
-
-  if (collection.seo?.title) {
-    title += ` | ${collection.seo.title}`;
-  } else if (collection.title) {
-    title += ` | ${collection.title} Collection`;
-  }
-
   return generateMeta({
-    title,
+    title: collection.seo?.title || collection.title,
     url: siteUrl,
+    image: ogImageSrc,
   });
 }
 
