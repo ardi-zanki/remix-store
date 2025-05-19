@@ -1,4 +1,4 @@
-import { Await, Link } from "react-router";
+import { Await, href, Link } from "react-router";
 import type { FooterQuery } from "storefrontapi.generated";
 import { useRelativeUrl } from "~/lib/use-relative-url";
 import { Icon } from "~/components/icon";
@@ -72,7 +72,9 @@ export function Footer({ footer: footerPromise }: FooterProps) {
           className="mx-auto flex max-w-fit flex-col gap-9 lg:gap-12"
         >
           <div className="flex flex-col items-center gap-1">
-            <FooterLink to="collection/all">
+            <FooterLink
+              to={href("/:locale?/collections/:handle", { handle: "all" })}
+            >
               Remix Soft Wear Catalog V.1
             </FooterLink>
             <p>Designed in USA</p>

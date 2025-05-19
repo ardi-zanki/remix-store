@@ -150,8 +150,7 @@ function Hero({ masthead, assetImages, product }: HeroDataProps) {
           }}
         />
 
-        {/* TODO: add better mobile support */}
-        <h1 className="mt-48 flex max-h-min w-full flex-nowrap items-start justify-center gap-8 px-4 text-2xl font-extrabold text-white md:mt-[300px] md:gap-20 md:px-9 md:text-5xl lg:gap-36 lg:text-8xl xl:mt-72 xl:gap-72 xl:text-8xl 2xl:mt-80">
+        <h1 className="mt-48 flex max-h-min w-full flex-nowrap items-start justify-center gap-8 px-4 text-2xl font-extrabold text-white md:mt-[250px] md:gap-64 md:px-9 md:text-5xl lg:mt-[330px] lg:gap-64 lg:text-8xl xl:mt-72 xl:gap-80 xl:text-8xl 2xl:mt-80 2xl:gap-96 3xl:mt-80">
           <span className="sr-only">Remix</span>
           <HeroText highlight={!highlightSwitch}>
             software
