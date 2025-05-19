@@ -1,6 +1,5 @@
 import { useRouteLoaderData } from "react-router";
 import type { loader as rootLoader } from "~/root";
-import { isMagicHidden } from "./show-the-magic";
 
 /**
  * Strips the domain for internal URLs
@@ -8,7 +7,7 @@ import { isMagicHidden } from "./show-the-magic";
 export function useRelativeUrl(ogUrl: string) {
   const rootData = useRouteLoaderData<typeof rootLoader>("root");
 
-  if (!rootData || isMagicHidden(rootData)) {
+  if (!rootData) {
     throw new Error("Failed to find data for root loader");
   }
 

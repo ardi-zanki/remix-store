@@ -1,5 +1,3 @@
-// All PRE-LAUNCH CHECK comments indicate code that should be removed once we launch
-
 import { useNonce, getShopAnalytics, Analytics } from "@shopify/hydrogen";
 import {
   Links,
@@ -30,8 +28,7 @@ import lexendZettaBlackUrl from "/font/lexend-zetta-black.woff2?url";
 
 import tailwindCssSrc from "./tailwind.css?url";
 import { MatrixText } from "./components/matrix-text";
-import { isMagicHidden, getShowAllTheMagic } from "./lib/show-the-magic";
-import { Splash } from "./components/splash";
+
 import type { Route } from "./+types/root";
 
 export type RootLoader = typeof loader;
@@ -104,15 +101,6 @@ export function links() {
 export async function loader(args: LoaderFunctionArgs) {
   let requestUrl = new URL(args.request.url);
   let siteUrl = requestUrl.protocol + "//" + requestUrl.host;
-
-  // PRE-LAUNCH CHECK -- don't load any data and redirect to home if not there
-  if (!getShowAllTheMagic(args.context)) {
-    let url = new URL(args.request.url);
-    if (url.pathname !== "/") {
-      return redirect("/");
-    }
-    return { hideTheMagic: true, siteUrl };
-  }
 
   // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
@@ -195,33 +183,25 @@ export function Layout({ children }: { children?: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-
-      {
-        // PRE-LAUNCH CHECK -- conditional render of all the extra stuff
-        isMagicHidden(data) ? (
-          <Splash />
-        ) : (
-          <body className="min-h-dvh overflow-x-hidden bg-black antialiased">
-            {data && "cart" in data ? (
-              <Analytics.Provider
-                cart={data.cart}
-                shop={data.shop}
-                consent={data.consent}
-              >
-                {data.header.menu && (
-                  <Navbar menu={data.header.menu} cart={data.cart} />
-                )}
-                <main>{children}</main>
-                <Footer footer={data.footer} />
-              </Analytics.Provider>
-            ) : (
-              children
+      <body className="min-h-dvh overflow-x-hidden bg-black antialiased">
+        {data ? (
+          <Analytics.Provider
+            cart={data.cart}
+            shop={data.shop}
+            consent={data.consent}
+          >
+            {data.header.menu && (
+              <Navbar menu={data.header.menu} cart={data.cart} />
             )}
-            <ScrollRestoration nonce={nonce} />
-            <Scripts nonce={nonce} />
-          </body>
-        )
-      }
+            <main>{children}</main>
+            <Footer footer={data.footer} />
+          </Analytics.Provider>
+        ) : (
+          children
+        )}
+        <ScrollRestoration nonce={nonce} />
+        <Scripts nonce={nonce} />
+      </body>
     </html>
   );
 }
@@ -247,20 +227,6 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
     errorStatus = error.status;
   } else if (error instanceof Error) {
     errorMessage = error.message;
-  }
-
-  // PRE-LAUNCH CHECK -- temporary error page
-  if (isMagicHidden(loaderData)) {
-    return (
-      <main className="flex h-screen w-full flex-col items-center justify-center gap-1 bg-[#0A101A]">
-        <h1 className="font-mono text-base text-white uppercase">
-          {errorStatus}
-        </h1>
-        <p className="font-mono text-sm text-white uppercase">
-          {errorStatus === 404 ? "Not Found" : "An unexpected error occurred"}
-        </p>
-      </main>
-    );
   }
 
   return (
