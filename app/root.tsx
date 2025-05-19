@@ -135,6 +135,7 @@ export async function loader(args: LoaderFunctionArgs) {
       consent: {
         checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
         storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
+        withPrivacyBanner: true,
       },
     },
     {
