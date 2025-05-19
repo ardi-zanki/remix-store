@@ -32,6 +32,8 @@ interface NavbarProps {
   cart: CartApiQueryFragment | null;
 }
 
+const FREE_SHIPPING_THRESHOLD = 75;
+
 export function Navbar({ menu, cart }: NavbarProps) {
   return (
     <header className="fixed top-0 z-10 grid max-h-(--header-height) w-full grid-cols-2 items-center bg-linear-to-b from-black/100 to-black/0 p-4 md:grid-cols-3 md:p-9">
@@ -113,6 +115,8 @@ function CartButton({ cart: originalCart }: Pick<NavbarProps, "cart">) {
     e.currentTarget.dispatchEvent(event);
   };
 
+  let subtotal = Number(subtotalAmount?.amount);
+
   return (
     <>
       <CartCTALink quantity={totalQuantity} className="flex md:hidden" />
@@ -162,8 +166,10 @@ function CartButton({ cart: originalCart }: Pick<NavbarProps, "cart">) {
                   />
                 ) : null}
               </div>
-              <p className="text-center text-xs text-white/50">
-                Taxes & Shipping calculated at checkout
+              <p className="text-center text-xs text-white">
+                {subtotal < FREE_SHIPPING_THRESHOLD
+                  ? `Add $${(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} more to get free shipping (U.S. only)`
+                  : "Free shipping on U.S. orders over $75"}
               </p>
             </div>
             <CheckoutLink
