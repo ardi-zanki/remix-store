@@ -142,8 +142,9 @@ function Hero({ masthead, assetImages, product }: HeroDataProps) {
         }}
       >
         <HydrogenImage
-          sizes="140vw sm:140vw md:120vw lg:86vw"
+          sizes="100vw lg:86vw"
           className="relative left-1/2 h-auto min-w-[140%] -translate-x-1/2 object-cover object-center md:min-w-[120%] lg:max-w-[86%] lg:min-w-[86%]"
+          loading="eager"
           data={masthead}
           style={{
             opacity,

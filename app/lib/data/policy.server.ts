@@ -16,6 +16,7 @@ export async function getPolicyData(
         handle: "contact",
         language: storefront.i18n?.language,
       },
+      cache: storefront.CacheLong(),
     });
 
     const page = data.page;
@@ -43,6 +44,7 @@ export async function getPolicyData(
       [policyKey]: true,
       language: storefront.i18n?.language,
     },
+    cache: storefront.CacheLong(),
   });
 
   const policy = data.shop?.[policyKey];
