@@ -63,7 +63,7 @@ export function Footer({ footer: footerPromise }: FooterProps) {
     <footer className="relative bg-black">
       <div
         className={clsx(
-          "px-2 pb-16 py-32 font-mono text-xs leading-tight text-white uppercase transition-opacity duration-300",
+          "px-2 py-32 pb-16 font-mono text-xs leading-tight text-white uppercase transition-opacity duration-300",
           isVisible ? "opacity-100" : "opacity-30",
         )}
       >

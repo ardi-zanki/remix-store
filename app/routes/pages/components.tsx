@@ -63,7 +63,7 @@ export default function Components() {
         <div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="px-4 py-2 text-2xl lowercase border border-white rounded-xl bg-white/10 text-white font-medium shadow-sm transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <button className="rounded-xl border border-white bg-white/10 px-4 py-2 text-2xl font-medium text-white lowercase shadow-sm transition hover:bg-white/20 focus:ring-2 focus:ring-blue-400 focus:outline-none">
                 {selectedComponent ? selectedComponent : "select a component"}
               </button>
             </DropdownMenuTrigger>

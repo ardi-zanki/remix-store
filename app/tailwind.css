@@ -187,7 +187,7 @@
   }
 
   a {
-    @apply text-white hover:text-blue-600 transition-colors duration-300 ease-in-out;
+    @apply text-white transition-colors duration-300 ease-in-out hover:text-blue-600;
   }
 }
 
@@ -235,7 +235,7 @@
   }
 
   a {
-    @apply text-blue-400 hover:text-blue-brand hover:underline transition-none;
+    @apply hover:text-blue-brand text-blue-400 transition-none hover:underline;
   }
 }
 
@@ -251,11 +251,11 @@
   }
 
   & a {
-    @apply text-blue-400 hover:text-blue-brand hover:underline transition-none;
+    @apply hover:text-blue-brand text-blue-400 transition-none hover:underline;
   }
 
   & blockquote {
-    @apply bg-[#212121] p-6 mt-6;
+    @apply mt-6 bg-[#212121] p-6;
   }
 
   & blockquote p:first-child {
@@ -271,6 +271,6 @@
   }
 
   & li {
-    @apply pl-0 static mt-4;
+    @apply static mt-4 pl-0;
   }
 }

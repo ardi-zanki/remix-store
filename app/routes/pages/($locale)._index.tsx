@@ -125,7 +125,7 @@ function Hero({ masthead, assetImages, product }: HeroDataProps) {
       className="relative h-screen max-h-[1200px] overflow-hidden bg-linear-[180deg,var(--color-black),#27273B] pt-24 md:top-7 md:h-[1200px] lg:h-[1600px] lg:max-h-[1600px] 2xl:h-[1800px] 2xl:max-h-[1800px]"
     >
       <div
-        className="w-full fixed"
+        className="fixed w-full"
         style={{
           height: `${heroRef.current?.offsetHeight || heroHeight}px`,
           transform: `translate3d(0, -${translateY}px, 0)`,
@@ -141,7 +141,7 @@ function Hero({ masthead, assetImages, product }: HeroDataProps) {
           }}
         />
 
-        <h1 className="mt-48 flex max-h-min w-full flex-nowrap items-start justify-center gap-8 px-4 text-2xl font-extrabold text-white md:mt-[250px] md:gap-64 md:px-9 md:text-5xl lg:mt-[330px] lg:gap-64 lg:text-8xl xl:mt-72 xl:gap-80 xl:text-8xl 2xl:mt-80 2xl:gap-96 3xl:mt-80">
+        <h1 className="3xl:mt-80 mt-48 flex max-h-min w-full flex-nowrap items-start justify-center gap-8 px-4 text-2xl font-extrabold text-white md:mt-[250px] md:gap-64 md:px-9 md:text-5xl lg:mt-[330px] lg:gap-64 lg:text-8xl xl:mt-72 xl:gap-80 xl:text-8xl 2xl:mt-80 2xl:gap-96">
           <span className="sr-only">Remix</span>
           <HeroText highlight={!highlightSwitch}>
             software
@@ -294,7 +294,7 @@ function LookbookEntry({ image, product }: LookbookEntryProps) {
           to={`/products/${product.handle}`}
           className={animatedLinkCss}
         >
-          <span className="absolute w-lvw -bottom-(--offset) -left-(--offset) h-(--lookbook-entry-height)" />
+          <span className="absolute -bottom-(--offset) -left-(--offset) h-(--lookbook-entry-height) w-lvw" />
           <span>{product.title}</span>
           <span className="text-[28px]">·</span>
           <span>${Math.floor(Number(product.price.amount))}</span>

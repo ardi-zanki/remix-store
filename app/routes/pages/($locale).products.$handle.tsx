@@ -285,9 +285,9 @@ function ProductForm({
   selectedVariant: ProductFragment["selectedOrFirstAvailableVariant"];
 }) {
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:gap-3 md:min-w-[330px] lg:min-w-[480px]">
+    <div className="flex flex-col gap-4 md:min-w-[330px] lg:min-w-[480px] lg:flex-row lg:gap-3">
       {productOptions.length > 0 ? (
-        <div className="flex flex-col gap-4 w-full lg:basis-2/3">
+        <div className="flex w-full flex-col gap-4 lg:basis-2/3">
           {productOptions.map((option) => (
             <ProductOptions key={option.name} option={option} />
           ))}

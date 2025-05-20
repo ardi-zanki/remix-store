@@ -38,7 +38,7 @@ export default function BlurImage({
   }, [loadState, previewUrl]);
 
   return (
-    <div className={clsx("relative w-full h-full", className)}>
+    <div className={clsx("relative h-full w-full", className)}>
       {/* Blurred preview image */}
       <img
         src={previewUrl}
@@ -55,7 +55,7 @@ export default function BlurImage({
         data={data}
         {...props}
         className={clsx(
-          "relative w-full h-full object-cover transition-all duration-750",
+          "relative h-full w-full object-cover transition-all duration-750",
           loadState === "loaded" ? "blur-none" : "blur-2xl",
         )}
       />

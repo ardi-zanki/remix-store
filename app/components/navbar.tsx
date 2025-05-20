@@ -141,7 +141,7 @@ function CartButton({ cart: originalCart }: Pick<NavbarProps, "cart">) {
               </button>
             </PopoverClose>
           </div>
-          <ul className="flex flex-col gap-4 px-5 py-4 max-h-[60vh] overflow-y-auto">
+          <ul className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto px-5 py-4">
             {lines.map((line) => (
               <CartLineItem
                 key={line.id}
