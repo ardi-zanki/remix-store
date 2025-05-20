@@ -90,7 +90,7 @@ export function Footer({ footer: footerPromise }: FooterProps) {
             />
 
             <div className="flex items-center gap-1">
-              <div className="relative size-[70px]">
+              <div className="relative size-[55px] md:size-[70px]">
                 <div
                   className={clsx(
                     "absolute inset-0 box-border rounded-full border-2 border-dotted border-white transition-[border] duration-150",
@@ -124,7 +124,7 @@ export function Footer({ footer: footerPromise }: FooterProps) {
               <Icon
                 name="remix-glyphs"
                 aria-hidden={true}
-                className="h-[70px] w-[146px]"
+                className="h-[55px] w-[115px] md:h-[70px] md:w-[146px]"
               />
             </div>
           </div>
