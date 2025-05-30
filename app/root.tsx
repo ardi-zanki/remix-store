@@ -9,6 +9,7 @@ import {
   isRouteErrorResponse,
   type ShouldRevalidateFunction,
   data,
+  redirect,
 } from "react-router";
 import { FOOTER_QUERY, HEADER_QUERY } from "~/lib/fragments";
 import { AnimatedLinkSpread } from "~/components/ui/animated-link";
@@ -131,8 +132,41 @@ export async function loader(args: Route.LoaderArgs) {
   );
 }
 
-async function loadCriticalData({ context }: Route.LoaderArgs) {
+async function loadCriticalData({ context, request }: Route.LoaderArgs) {
   const { storefront, cart } = context;
+
+  // Check for discount search parameter and apply it to cart
+  const requestUrl = new URL(request.url);
+  const searchParams = new URLSearchParams(requestUrl.search);
+  const discountCode = searchParams.get("discount");
+
+  if (discountCode) {
+    // Remove discount parameter from URL
+    searchParams.delete("discount");
+
+    // Build redirect URL with remaining parameters
+    const redirectUrl = `${requestUrl.pathname}${searchParams}`;
+
+    try {
+      // Apply discount to cart
+      const result = await cart.updateDiscountCodes([discountCode]);
+      const headers = cart.setCartId(result.cart.id);
+
+      // Throw redirect to same page but without discount parameter
+      throw redirect(redirectUrl, {
+        status: 303,
+        headers,
+      });
+    } catch (error) {
+      // If discount application fails, still redirect to remove the parameter
+      if (error instanceof Response) {
+        // Re-throw if it's already a redirect response
+        throw error;
+      }
+      console.error("Failed to apply discount code:", discountCode, error);
+      throw redirect(redirectUrl, { status: 303 });
+    }
+  }
 
   const [header, cartData] = await Promise.all([
     storefront.query(HEADER_QUERY, {
