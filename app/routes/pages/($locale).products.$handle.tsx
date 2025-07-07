@@ -293,7 +293,11 @@ function ProductForm({
         {productOptions.length > 0 ? (
           <div className="flex flex-col gap-4 lg:col-span-2">
             {productOptions.map((option) => (
-              <ProductOptions key={option.name} option={option} />
+              <ProductOptions
+                key={option.name}
+                option={option}
+                subscribeIfBackInStock={subscribeIfBackInStock}
+              />
             ))}
           </div>
         ) : null}
@@ -423,7 +427,13 @@ function SubscribeCustomerForm({
   );
 }
 
-function ProductOptions({ option }: { option: MappedProductOptions }) {
+function ProductOptions({
+  option,
+  subscribeIfBackInStock,
+}: {
+  option: MappedProductOptions;
+  subscribeIfBackInStock: boolean;
+}) {
   const selectedValueName = option.optionValues.find((ov) => ov.selected)?.name;
 
   return (
@@ -446,16 +456,18 @@ function ProductOptions({ option }: { option: MappedProductOptions }) {
           sideOffset={10}
         >
           {option.optionValues.map((valueOption) => {
-            const { name, variantUriQuery, selected, available } = valueOption;
+            let { name, variantUriQuery, selected, available } = valueOption;
+            // If the user can subscribe, don't disable the option
+            let disable = !subscribeIfBackInStock && !available;
 
             return (
               <DropdownMenuItem
                 key={option.name + name}
                 asChild
-                disabled={!available}
+                disabled={disable}
                 className={cn(
                   "rounded-4xl px-5 py-5 text-lg",
-                  !available && "cursor-not-allowed text-white/30",
+                  disable && "cursor-not-allowed text-white/30",
                 )}
               >
                 <Link
@@ -465,13 +477,13 @@ function ProductOptions({ option }: { option: MappedProductOptions }) {
                   to={{ search: variantUriQuery }}
                   className={cn(
                     "flex w-full items-center justify-between text-xl hover:text-white",
-                    !available && "text-white/30",
+                    disable && "text-white/30",
                   )}
                   onClick={(e) => {
-                    if (!available) e.preventDefault();
+                    if (disable) e.preventDefault();
                   }}
-                  tabIndex={!available ? -1 : undefined}
-                  aria-disabled={!available}
+                  tabIndex={disable ? -1 : undefined}
+                  aria-disabled={disable}
                 >
                   {name}
                   {selected && <Icon name="check" className="size-5" />}
