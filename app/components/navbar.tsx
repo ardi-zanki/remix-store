@@ -90,15 +90,32 @@ function CartButton({ cart: originalCart }: Pick<NavbarProps, "cart">) {
 
   if (!cart || totalQuantity === 0) {
     return (
-      <AnimatedLink
-        to="/collections/all"
-        iconName="cart"
-        animationType="text"
-        expandedText="All"
-        prefetch="intent"
-      >
-        Shop
-      </AnimatedLink>
+      <>
+        <Link
+          to="/collections/all"
+          className="group relative flex h-12 items-center justify-center gap-2 rounded-[54px] bg-white px-5 py-2 text-center text-base font-semibold text-black no-underline md:hidden"
+          prefetch="intent"
+        >
+          <Icon
+            name="cart"
+            className="size-6"
+            fill="currentColor"
+            aria-hidden="true"
+          />
+          Shop All
+        </Link>
+
+        <AnimatedLink
+          to="/collections/all"
+          iconName="cart"
+          animationType="text"
+          expandedText="All"
+          prefetch="intent"
+          className="hidden md:flex"
+        >
+          Shop
+        </AnimatedLink>
+      </>
     );
   }
 
