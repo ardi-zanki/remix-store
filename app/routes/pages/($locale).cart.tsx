@@ -194,16 +194,16 @@ export default function Cart() {
                   </div>
 
                   {cartDiscounts?.totalCartDiscount &&
-                    cartDiscounts?.totalCartDiscount > 0 && (
-                      <div className="flex w-full items-center justify-between">
-                        <p className="text-sm font-medium text-green-400">
-                          {cartDiscounts?.discountTitle}
-                        </p>
-                        <p className="text-sm font-medium text-green-400">
-                          -${cartDiscounts.totalCartDiscount.toFixed(2)}
-                        </p>
-                      </div>
-                    )}
+                  cartDiscounts?.totalCartDiscount > 0 ? (
+                    <div className="flex w-full items-center justify-between">
+                      <p className="text-sm font-medium text-green-400">
+                        {cartDiscounts?.discountTitle}
+                      </p>
+                      <p className="text-sm font-medium text-green-400">
+                        -${cartDiscounts.totalCartDiscount.toFixed(2)}
+                      </p>
+                    </div>
+                  ) : null}
 
                   {cartDiscounts?.discountedSubtotalAmount &&
                   cartDiscounts?.totalCartDiscount > 0 ? (

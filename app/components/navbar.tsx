@@ -158,6 +158,8 @@ function CartButton({ cart: originalCart }: Pick<NavbarProps, "cart">) {
     Number(cartDiscounts?.discountedSubtotalAmount?.amount) ||
     Number(subtotalAmount?.amount);
 
+  console.log("the subtotal is", subtotal);
+
   return (
     <>
       <CartCTALink quantity={totalQuantity} className="flex md:hidden" />
@@ -210,16 +212,16 @@ function CartButton({ cart: originalCart }: Pick<NavbarProps, "cart">) {
 
               {/* Show cart-level discounts */}
               {cartDiscounts?.totalCartDiscount &&
-                cartDiscounts?.totalCartDiscount > 0 && (
-                  <div className="flex w-full items-center justify-between">
-                    <p className="text-sm font-medium text-green-400">
-                      {cartDiscounts?.discountTitle}
-                    </p>
-                    <p className="text-sm font-medium text-green-400">
-                      -${cartDiscounts.totalCartDiscount.toFixed(2)}
-                    </p>
-                  </div>
-                )}
+              cartDiscounts?.totalCartDiscount > 0 ? (
+                <div className="flex w-full items-center justify-between">
+                  <p className="text-sm font-medium text-green-400">
+                    {cartDiscounts?.discountTitle}
+                  </p>
+                  <p className="text-sm font-medium text-green-400">
+                    -${cartDiscounts.totalCartDiscount.toFixed(2)}
+                  </p>
+                </div>
+              ) : null}
 
               {/* Show total if there are discounts */}
               {cartDiscounts?.discountedSubtotalAmount &&
