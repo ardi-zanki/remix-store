@@ -339,7 +339,7 @@ function SubscribeCustomerForm({
           // if JS hasn't loaded yet, redirect to collections page after success
           <input
             type="hidden"
-            name="redirect"
+            name="redirectTo"
             value={href("/:locale?/collections/:handle", { handle: "all" })}
           />
         )}

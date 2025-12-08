@@ -1,13 +1,28 @@
 import { data, redirect } from "react-router";
 import type { Route } from "./+types/subscribe";
 import { ShopifyCustomer } from "~/lib/data/subscribe.server";
+import { isValidRedirect } from "~/lib/redirect";
 import * as z from "zod";
+
+/**
+ * Validates that a string contains only safe characters for Shopify tags.
+ * Allows: alphanumeric, hyphens, underscores, and spaces (for titles).
+ */
+const safeTagStringSchema = (fieldName: string, allowSpaces = false) =>
+  z
+    .string(`${fieldName} is required.`)
+    .min(1, `${fieldName} cannot be empty.`)
+    .max(100, `${fieldName} is too long.`)
+    .regex(
+      allowSpaces ? /^[a-zA-Z0-9\s_-]+$/ : /^[a-zA-Z0-9_-]+$/,
+      `${fieldName} contains invalid characters. Only letters, numbers, hyphens, and underscores are allowed.`,
+    );
 
 const subscribeSchema = z.object({
   email: z.email("Please enter a valid email address."),
-  variantHandle: z.string("Variant handle is required."),
-  variantTitle: z.string("Variant title is required."),
-  redirect: z.string().nullish(),
+  variantHandle: safeTagStringSchema("Variant handle", false),
+  variantTitle: safeTagStringSchema("Variant title", true),
+  redirectTo: z.string().nullish(),
 });
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -24,7 +39,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     email: form.get("email"),
     variantHandle: form.get("variant-handle"),
     variantTitle: form.get("variant-title"),
-    redirect: form.get("redirect"),
+    redirectTo: form.get("redirectTo"),
   });
 
   if (!validationResult.success) {
@@ -37,10 +52,17 @@ export async function action({ request, context }: Route.ActionArgs) {
     email,
     variantHandle,
     variantTitle,
-    redirect: redirectUrl,
+    redirectTo: redirectUrl,
   } = validationResult.data;
 
-  variantTitle = variantTitle.toLowerCase().replace(/ /g, "-");
+  // Sanitize variant title: convert to lowercase and replace spaces with hyphens
+  // This is safe because we've already validated the input contains only safe characters
+  variantTitle = variantTitle
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-") // Replace one or more spaces with a single hyphen
+    .replace(/--+/g, "-") // Replace multiple consecutive hyphens with a single hyphen
+    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 
   const tags = [
     `back-in-stock-subscriber`,
@@ -70,8 +92,8 @@ export async function action({ request, context }: Route.ActionArgs) {
       });
     }
 
-    // If redirect URL exists, redirect after success (JS not loaded)
-    if (redirectUrl) {
+    // If redirect URL exists and is valid, redirect after success (JS not loaded)
+    if (redirectUrl && isValidRedirect(redirectUrl)) {
       return redirect(redirectUrl);
     }
 

@@ -1,4 +1,5 @@
 import { useRouteLoaderData, data, href } from "react-router";
+import { isValidRedirect } from "~/lib/redirect";
 import type { CartQueryDataReturn } from "@shopify/hydrogen";
 import {
   Analytics,
@@ -87,7 +88,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const { cart: cartResult, errors } = result;
 
   const redirectTo = formData.get("redirectTo") ?? null;
-  if (typeof redirectTo === "string") {
+  if (typeof redirectTo === "string" && isValidRedirect(redirectTo)) {
     status = 303;
     headers.set("Location", redirectTo);
   }
